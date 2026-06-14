@@ -7,14 +7,14 @@ A Git-based marketplace for reusable agent plugins and skills.
 ## Packages
 
 1. `skills/.curated/estonia-public-sources` — routes questions across 133 official Estonian public sources.
-2. `skills/.curated/estonia-building-supply-search` — searches Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, and Depo for products, prices, and stock.
+2. `skills/.curated/estonian-store-search` — searches Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo) and grocery stores (Prisma, Rimi, Selver) for products, prices, and stock.
 
 ## Install From Anthropic Marketplace
 
 ```bash
 claude plugin marketplace add taivop/marketplace
 claude plugin install estonia-public-sources@marketplace
-claude plugin install estonia-building-supply-search@marketplace
+claude plugin install estonian-store-search@marketplace
 ```
 
 ## Install In Codex
@@ -26,7 +26,7 @@ python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-githu
 
 python3 ~/.codex/skills/.system/skill-installer/scripts/install-skill-from-github.py \
   --repo taivop/marketplace \
-  --path skills/.curated/estonia-building-supply-search
+  --path skills/.curated/estonian-store-search
 ```
 
 ## Contributing

@@ -1,0 +1,8 @@
+{
+  "name": "estonian-store-search",
+  "version": "0.2.0",
+  "description": "Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo) and grocery stores (Prisma, Rimi, Selver) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.",
+  "author": {
+    "name": "Taivo Marketplace"
+  }
+}

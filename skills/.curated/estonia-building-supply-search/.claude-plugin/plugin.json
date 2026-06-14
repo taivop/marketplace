@@ -1,8 +1,0 @@
-{
-  "name": "estonia-building-supply-search",
-  "version": "0.1.0",
-  "description": "Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo) for products, prices, and stock. USE WHEN user asks to find products at Estonian building stores, compare prices across them, or check availability.",
-  "author": {
-    "name": "Taivo Marketplace"
-  }
-}
