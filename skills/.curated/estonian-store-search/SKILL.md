@@ -1,12 +1,12 @@
 ---
 name: estonian-store-search
-description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo) and grocery stores (Prisma, Rimi, Selver) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
+description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), and the second-hand marketplace Okidoki for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
 metadata:
   distribution:
     tier: curated
     publish_anthropic: true
     plugin_name: estonian-store-search
-    plugin_version: 0.2.0
+    plugin_version: 0.3.0
     plugin_author: Taivo Marketplace
 ---
 
@@ -15,6 +15,7 @@ Run `curl` searches across stores in parallel. By default, filter out out-of-sto
 
 Building supply stores: Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo.
 Grocery stores: Prisma, Rimi, Selver.
+Second-hand marketplace: Okidoki.
 
 ## Bauhof — Magento GraphQL
 
@@ -142,3 +143,27 @@ Single product details — fetch the product page (`url` from the search record)
 curl -s "PRODUCT_URL"
 ```
 No JSON-LD; ingredients are under the "Koostisosad" heading and the marketing copy under the description section. Price/stock/name are already in the Klevu record, so only hit the page when you need ingredients or description.
+
+## Okidoki (second-hand marketplace) — UI-only (Cloudflare-protected)
+
+Okidoki.ee is Estonia's largest classifieds/second-hand marketplace. Prices are set by individual sellers and vary per listing.
+
+Search URL (open in browser — curl returns 403 from Cloudflare bot protection):
+```
+https://www.okidoki.ee/buy/all/?query=SEARCH_TERM
+```
+
+Category-scoped search (append `?query=SEARCH_TERM` to category URLs):
+- All categories: `/buy/all/`
+- Electronics: `/buy/26/`
+- Computers: `/buy/25/`
+- Cars: `/buy/1601/`
+- Animals: `/buy/3611/`
+- Building materials: `/buy/361261/`
+- Entertainment & hobbies: `/buy/23/`
+
+If the user provides the HTML from the search results page, each listing card contains:
+- Title, price, seller location, date posted, thumbnail
+- Link to individual listing at `/item/{id}/` pattern
+
+Since direct `curl` is blocked, provide the search URL to the user and ask them to paste the results, or treat it as a supplemental manual-lookup source when automated stores don't have the item.
