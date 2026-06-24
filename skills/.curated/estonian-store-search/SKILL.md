@@ -1,12 +1,12 @@
 ---
 name: estonian-store-search
-description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo) and grocery stores (Prisma, Rimi, Selver) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
+description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
 metadata:
   distribution:
     tier: curated
     publish_anthropic: true
     plugin_name: estonian-store-search
-    plugin_version: 0.2.0
+    plugin_version: 0.5.0
     plugin_author: Taivo Marketplace
 ---
 
@@ -15,6 +15,8 @@ Run `curl` searches across stores in parallel. By default, filter out out-of-sto
 
 Building supply stores: Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo.
 Grocery stores: Prisma, Rimi, Selver.
+Home furnishing: IKEA.
+Second-hand marketplaces: Vinted, Yaga.
 
 ## Bauhof — Magento GraphQL
 
@@ -142,3 +144,65 @@ Single product details — fetch the product page (`url` from the search record)
 curl -s "PRODUCT_URL"
 ```
 No JSON-LD; ingredients are under the "Koostisosad" heading and the marketing copy under the description section. Price/stock/name are already in the Klevu record, so only hit the page when you need ingredients or description.
+
+## IKEA (home furnishing) — Search API
+
+```bash
+curl -s "https://sik.search.blue.cdtapps.com/ee/et/search-result-page?types=PRODUCT&q=SEARCH_TERM&size=10&c=sr&v=20240110" \
+  -H "User-Agent: Mozilla/5.0"
+```
+
+Results in `searchResultPage.products.main.items[].product`. Per product: `name`, `typeName` (e.g. "Põrandalamp"), `itemMeasureReferenceText` (size), `id`/`itemNo` (article number), `pipUrl` (product URL), `mainImageUrl`. Price: `salesPrice.numeral` + `salesPrice.currencyCode` (EUR, incl. VAT). The search response's `availability[]` is coarse (delivery flags only); for real stock use the availability API below. Total hit count is `searchResultPage.products.badge`.
+
+### IKEA — in-store + delivery stock
+
+For actual stock, query the availability API with the `itemNo` from search. The Tallinn store (the only IKEA in Estonia) is store id **648**.
+
+```bash
+curl -s "https://api.salesitem.ingka.com/availabilities/ru/ee?itemNos=ITEM_NO&expand=StoresList,Restocks,SalesLocations" \
+  -H "X-Client-ID: ef382663-a2a5-40d4-8afe-f0634821c0ed" \
+  -H "Accept: application/json;version=2" \
+  -H "User-Agent: Mozilla/5.0"
+```
+
+Results in `availabilities[]`, one entry per store (`classUnitKey.classUnitType` == `STO`, `classUnitCode` == store id; `648` = Tallinn). Per store:
+- `availableForCashCarry` — whether it can be bought in-store now.
+- `buyingOption.cashCarry.availability.quantity` — units physically in the Tallinn store.
+- `buyingOption.cashCarry.availability.probability.thisDay.messageType` — `HIGH_IN_STOCK` / `LOW_IN_STOCK` / `OUT_OF_STOCK` (with a colour token).
+- `buyingOption.homeDelivery.range.inRange` — whether home delivery is offered.
+
+Pass multiple `itemNos` comma-separated. `X-Client-ID` is the public web key from the IKEA storefront; the `Accept: application/json;version=2` header is required.
+
+## Vinted (second-hand marketplace) — catalog API (2-step)
+
+The API needs an anonymous session cookie. Fetch the homepage once to get cookies, then call the catalog endpoint with them.
+
+Step 1 — get a session cookie:
+```bash
+curl -s -c /tmp/vinted_cookies.txt -o /dev/null \
+  "https://www.vinted.ee/" \
+  -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36"
+```
+
+Step 2 — search the catalog:
+```bash
+curl -s -b /tmp/vinted_cookies.txt \
+  "https://www.vinted.ee/api/v2/catalog/items?search_text=SEARCH_TERM&per_page=10&order=newest_first" \
+  -H "User-Agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36" \
+  -H "Accept: application/json"
+```
+
+Results in `items[]`. Per item: `title`, `brand_title`, `size_title`, `status` (condition in Estonian, e.g. "Hea"/"Rahuldav"), `price.amount` + `price.currency_code` (EUR), `path` (append to `https://www.vinted.ee` for the product URL), `photo.url`, `user.login`. Total hit count is `pagination.total_entries` (`pagination.total_pages` for paging via `&page=N`). `order` accepts `newest_first`, `price_low_to_high`, `price_high_to_low`, `relevance`. A real `User-Agent` is required or the request is blocked. Everything is second-hand/used; there is no "stock" — an item is either listed or sold.
+
+## Yaga (second-hand marketplace) — search API
+
+```bash
+curl -s "https://www.yaga.ee/api/product/search/?query=SEARCH_TERM&offset=0&limit=60" \
+  -H "User-Agent: Mozilla/5.0" -H "Accept: application/json"
+```
+
+Note the **trailing slash** on `/search/` and the param name **`query`** (not `q`). No cookie or auth needed. Do NOT use `/api/product` — that is a generic popularity feed that ignores the query and always returns the same listings.
+
+Results in `data.list[]`. `data.total` is the real match count; `data.searchEngine` names the backend (e.g. `legacy-postgres`). Per item: `brand`, `price` (EUR, incl. VAT), `size`, `slug`, `shop.activeSlug`, `likeCount`, `images[].gallery` (image URL, also `?s=600`/`?s=300` size variants). Product URL: `https://www.yaga.ee/{shop.activeSlug}/product/{slug}`. Page with `offset` (multiples of `limit`).
+
+Listings have no free-text title/description field — they are brand + size + attributes + photos — so matching is on brand/category, not a title string. Gibberish queries correctly return `total: 0`.

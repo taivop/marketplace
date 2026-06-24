@@ -5,9 +5,9 @@
   },
   "plugins": [
     {
-      "name": "estonian-store-search",
-      "source": "./skills/.curated/estonian-store-search",
-      "description": "Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo) and grocery stores (Prisma, Rimi, Selver) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.",
+      "name": "ester",
+      "source": "./skills/.curated/ester",
+      "description": "Searches the Estonian library catalog ESTER (ester.ee) to find books, check availability, and locate them in specific library branches. USE WHEN user asks to find a book in Estonian libraries, check if a book is available, find where to pick up a library book, search ESTER, or mentions Estonian library branches like Kalamaja, Keskraamatukogu, Tartu, etc.",
       "author": {
         "name": "Taivo Marketplace"
       }
@@ -21,9 +21,9 @@
       }
     },
     {
-      "name": "ester",
-      "source": "./skills/.curated/ester",
-      "description": "Searches the Estonian library catalog ESTER (ester.ee) to find books, check availability, and locate them in specific library branches. USE WHEN user asks to find a book in Estonian libraries, check if a book is available, find where to pick up a library book, search ESTER, or mentions Estonian library branches like Kalamaja, Keskraamatukogu, Tartu, etc.",
+      "name": "estonian-store-search",
+      "source": "./skills/.curated/estonian-store-search",
+      "description": "Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.",
       "author": {
         "name": "Taivo Marketplace"
       }
