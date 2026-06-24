@@ -205,4 +205,18 @@ Note the **trailing slash** on `/search/` and the param name **`query`** (not `q
 
 Results in `data.list[]`. `data.total` is the real match count; `data.searchEngine` names the backend (e.g. `legacy-postgres`). Per item: `brand`, `price` (EUR, incl. VAT), `size`, `slug`, `shop.activeSlug`, `likeCount`, `images[].gallery` (image URL, also `?s=600`/`?s=300` size variants). Product URL: `https://www.yaga.ee/{shop.activeSlug}/product/{slug}`. Page with `offset` (multiples of `limit`).
 
-Listings have no free-text title/description field — they are brand + size + attributes + photos — so matching is on brand/category, not a title string. Gibberish queries correctly return `total: 0`.
+Listings have no free-text title/description field — they are brand + size + attributes + photos — so matching is on brand/category, not a title string. Gibberish queries correctly return `total: 0`. The search item's own `brand` field is often `null`/unreliable; treat the query term as the brand.
+
+### Filtering the search (avoid the womenswear/off-palette trap)
+
+The search payload has **no category, colour, or gender** per item, so a bare brand query mixes in women's and off-palette listings. Two complementary tools:
+
+1. **Server-side filters** — append as URL-encoded **JSON int-arrays**, format `key=[1,2]` (a wrong format returns a `VALIDATION_ERROR` naming the param + expected shape, which is how to discover more). Working keys: `colors`, `materials`, `brands`, `conditions`. Example (navy+grey+brown wool): `&colors=[9,11,14]&materials=[16]`. The `categories` key exists but uses a bespoke nested union that resisted reverse-engineering — **don't filter by category server-side**; post-filter via the detail API instead.
+
+2. **Detail API** — `https://www.yaga.ee/api/product/{slug}/` (or `/{id}/`) returns the rich fields the search omits: `description` (the only human text — has brand/cut/measurements/colour), `categoryId`, `categoriesMap` (root→leaf path, e.g. `[2,471]`), `colors`, `materials`, `condition.namesMultilang.en`. **Gender = `categoriesMap[0]`: men's `2`, women's `1`, kids `3`.** Pipeline that works: brand query + `colors=[palette]` server-side → fetch each hit's detail (parallelise) → keep `categoriesMap[0]==2` and the leaf categories you want → read `description` to confirm.
+
+### Taxonomy lookups (id ⇄ name)
+
+- `https://www.yaga.ee/api/category/` — full tree; top level is flat, children nest under each node's `categories` key. Men (`2`) leaves incl.: knits `298`, shirts `167`, tees `168`, jeans `300`, trousers `301`, dress-trousers `372`, blazers `306`, coats `305`, suits `471`, loafers/shoes `312`, sneakers `318`, belts `323`.
+- `https://www.yaga.ee/api/color/` — colour ids. Palette-relevant: black `1`, blue `3`, navy `9`, grey `11`, white `13`, brown `14`, light-brown `15`, cream `16`, khaki `19`.
+- `https://www.yaga.ee/api/brand/` — brand id→name (needed for the `brands` filter).
