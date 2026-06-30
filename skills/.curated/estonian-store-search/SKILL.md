@@ -1,12 +1,12 @@
 ---
 name: estonian-store-search
-description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
+description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), sports nutrition (Bulk), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
 metadata:
   distribution:
     tier: curated
     publish_anthropic: true
     plugin_name: estonian-store-search
-    plugin_version: 0.5.0
+    plugin_version: 0.6.0
     plugin_author: Taivo Marketplace
 ---
 
@@ -16,6 +16,7 @@ Run `curl` searches across stores in parallel. By default, filter out out-of-sto
 Building supply stores: Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo.
 Grocery stores: Prisma, Rimi, Selver.
 Home furnishing: IKEA.
+Sports nutrition: Bulk (pan-EU store, ships to Estonia).
 Second-hand marketplaces: Vinted, Yaga.
 
 ## Bauhof — Magento GraphQL
@@ -172,6 +173,24 @@ Results in `availabilities[]`, one entry per store (`classUnitKey.classUnitType`
 - `buyingOption.homeDelivery.range.inRange` — whether home delivery is offered.
 
 Pass multiple `itemNos` comma-separated. `X-Client-ID` is the public web key from the IKEA storefront; the `Accept: application/json;version=2` header is required.
+
+## Bulk (sports nutrition) — Adobe Commerce Live Search GraphQL
+
+Bulk's pan-European store (`https://www.bulk.com/eu/`) ships to Estonia and prices everything in EUR (incl. VAT). It runs on Adobe Commerce, so search hits the Catalog/Live Search `productSearch` GraphQL endpoint. The request needs the EU store-view headers (public storefront keys, pulled from `https://www.bulk.com/eu/configs.json`). Send `--compressed` — responses are gzipped.
+
+```bash
+curl -s --compressed -X POST "https://www.bulk.com/eu/cs-graphql" \
+  -H "Content-Type: application/json" \
+  -H "Magento-Environment-Id: bf658f50-a0ce-4baa-b707-a7622f75a311" \
+  -H "Magento-Website-Code: bp_europe" \
+  -H "Magento-Store-Code: bulkpowders_europe" \
+  -H "Magento-Store-View-Code: bp_europe_view" \
+  -H "Magento-Customer-Group: 0" \
+  -H "x-api-key: d3f6d917148f42d5bb7eb7eb3272cf0e" \
+  -d '{"query":"query($phrase:String!){productSearch(phrase:$phrase,page_size:10){total_count items{productView{__typename name sku urlKey inStock images{url} ... on SimpleProductView{price{final{amount{value currency}}regular{amount{value currency}}}} ... on ComplexProductView{priceRange{minimum{final{amount{value currency}}regular{amount{value currency}}}maximum{final{amount{value currency}}}}}}}}}","variables":{"phrase":"SEARCH_TERM"}}'
+```
+
+Results in `data.productSearch.items[].productView`; `total_count` is the full hit count (page via `current_page`/`page_size` args). Stock: `inStock` (boolean). Single-variant products are `SimpleProductView` (use `price.final.amount.value`); multi-variant products (most powders, sold in several sizes/flavours) are `ComplexProductView` (use `priceRange.minimum.final` … `maximum.final`). `regular` vs `final` shows discounts. Product URL: `https://www.bulk.com/eu/products/{urlKey}/{sku-lowercased}` (e.g. `creatine-monohydrate-eu` + `BPB-CMON-0000-EU1` → `.../products/creatine-monohydrate-eu/bpb-cmon-0000-eu1`).
 
 ## Vinted (second-hand marketplace) — catalog API (2-step)
 
