@@ -1,0 +1,35 @@
+# Copy to spec.yaml and edit. Everything here is yours to control.
+
+# --- content -----------------------------------------------------------------
+story: >
+  A young fox finds a lost star in the forest at night and goes on a journey
+  to return it to the sky.
+
+# Optional: describe your characters yourself, or leave this out and the
+# outline stage will invent them. Whatever ends up in output/outline.json is
+# what gets locked and reused for every page - edit it there too.
+characters: >
+  Pip, a small curious fox kit with a striped scarf.
+
+audience: children age 4-8
+pages: 8                      # number of coloring pages
+
+# --- style -------------------------------------------------------------------
+# Free-form; appended to every image prompt. Line-art constraints (black
+# outlines, no gray, no text) are always enforced on top of this.
+style: >
+  simple, friendly cartoon with rounded shapes, storybook charm, moderate
+  detail suitable for young children
+
+# --- models ------------------------------------------------------------------
+text_model: gpt-4o-mini       # for the story outline
+image_model: gpt-image-1      # also: gpt-image-1.5, gpt-image-2
+image_quality: medium         # low | medium | high (cost vs detail)
+image_size: 1024x1536         # portrait; matches letter/A4 aspect well
+
+# --- print output ------------------------------------------------------------
+title: The Fox and the Star
+page_size: letter             # letter | a4
+dpi: 300
+margin_inches: 0.5
+bw_threshold: 200             # 0-255; higher = more aggressive gray removal
