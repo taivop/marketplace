@@ -33,3 +33,4 @@ page_size: letter             # letter | a4
 dpi: 300
 margin_inches: 0.5
 bw_threshold: 200             # 0-255; higher = more aggressive gray removal
+page_numbers: true            # print a small page number in each page's bottom margin

@@ -6,7 +6,7 @@ metadata:
     tier: curated
     publish_anthropic: true
     plugin_name: coloring-book
-    plugin_version: 0.1.0
+    plugin_version: 0.2.0
     plugin_author: Taivo Marketplace
 ---
 

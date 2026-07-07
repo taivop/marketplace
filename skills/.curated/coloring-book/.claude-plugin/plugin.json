@@ -1,6 +1,6 @@
 {
   "name": "coloring-book",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Generate a printable, text-free story coloring book PDF from a story idea, with consistent characters and real-landmark backgrounds. Use when the user asks to create a coloring book, coloring pages, or a wordless picture-story PDF. Requires an OpenAI API key.",
   "author": {
     "name": "Taivo Marketplace"

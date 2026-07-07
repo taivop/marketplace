@@ -48,7 +48,7 @@ from pathlib import Path
 
 import requests
 import yaml
-from PIL import Image, ImageDraw, ImageOps
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 
 # Where this script and its bundled read-only template (spec.example.yaml) live.
 ROOT = Path(__file__).resolve().parent
@@ -458,6 +458,33 @@ def stage_postprocess(spec):
 
 # -------------------------------------------------------------------- pdf ---
 
+def _number_font(size):
+    """A scalable font for page numbers; fall back gracefully across platforms."""
+    for path in ("/System/Library/Fonts/Supplemental/Arial.ttf",
+                 "/Library/Fonts/Arial.ttf",
+                 "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+                 "/usr/share/fonts/truetype/liberation/LiberationSans-Regular.ttf"):
+        try:
+            return ImageFont.truetype(path, size)
+        except OSError:
+            continue
+    try:
+        return ImageFont.load_default(size=size)  # Pillow >= 10.1 scalable default
+    except TypeError:
+        return ImageFont.load_default()
+
+
+def _draw_page_number(sheet, number, pw, ph, margin, dpi):
+    """Print a small page number centered in the bottom margin (never over art)."""
+    draw = ImageDraw.Draw(sheet)
+    font = _number_font(max(16, int(dpi * 0.14)))
+    label = str(number)
+    l, t, r, b = draw.textbbox((0, 0), label, font=font)
+    x = (pw - (r - l)) // 2 - l
+    y = ph - int(margin * dpi * 0.5) - (b - t) // 2 - t
+    draw.text((x, y), label, fill=0, font=font)
+
+
 def stage_pdf(spec):
     src = sorted((OUT / "print").glob("page_*.png"))
     if not src:
@@ -471,8 +498,9 @@ def stage_pdf(spec):
     pw, ph = int(win * dpi), int(hin * dpi)
     box_w, box_h = pw - int(2 * margin * dpi), ph - int(2 * margin * dpi)
 
+    page_numbers = bool(spec.get("page_numbers", True))
     sheets = []
-    for p in src:
+    for i, p in enumerate(src, start=1):
         art = Image.open(p).convert("L")
         scale = min(box_w / art.width, box_h / art.height)
         art = art.resize((int(art.width * scale), int(art.height * scale)), Image.LANCZOS)
@@ -480,6 +508,8 @@ def stage_pdf(spec):
         art = art.point(lambda v: 255 if v >= 128 else 0, mode="L")
         sheet = Image.new("L", (pw, ph), 255)
         sheet.paste(art, ((pw - art.width) // 2, (ph - art.height) // 2))
+        if page_numbers:
+            _draw_page_number(sheet, i, pw, ph, margin, dpi)
         sheets.append(sheet)
 
     dest = OUT / "book.pdf"
