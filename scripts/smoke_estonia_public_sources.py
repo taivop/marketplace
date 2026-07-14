@@ -1446,6 +1446,111 @@ def unemployment_statistics() -> None:
     assert workbook == b"PK\x03\x04"
 
 
+def education_data() -> None:
+    page_url = "https://www.ehis.ee/"
+    body, content_type = fetch(page_url)
+    text = body.decode("utf-8", "replace")
+    contacts = re.search(r'href="([^"]+koolide_kontaktid\.xls[^"]*)"', text)
+    curricula = re.search(r'href="([^"]+oppekavad\.xlsx[^"]*)"', text)
+    unconfirmed = re.search(r'href="([^"]+kinnitamised_EHIS_esileht\.xls[^"]*)"', text)
+    assert content_type == "text/html" and contacts and curricula and unconfirmed
+
+    xls, xls_type = fetch(unescape(contacts.group(1)), limit=8)
+    xlsx, xlsx_type = fetch(unescape(curricula.group(1)), limit=4)
+    assert xls_type == "application/octet-stream"
+    assert xlsx_type == "application/octet-stream"
+    assert xls == bytes.fromhex("D0 CF 11 E0 A1 B1 1A E1")
+    assert xlsx == b"PK\x03\x04"
+
+
+def etis() -> None:
+    body, content_type = fetch("https://www.etis.ee/Portal/Projects/Index")
+    text = body.decode("utf-8", "replace")
+    chunk = re.search(r'src="([^"]*static/js/main\.[^"]+\.chunk\.js)"', text)
+    assert content_type == "text/html" and chunk
+
+    javascript, js_type = fetch(urljoin("https://www.etis.ee/", chunk.group(1)))
+    script = javascript.decode("utf-8", "replace")
+    assert js_type in {"application/javascript", "text/javascript"}
+    for endpoint in (
+        "/Portal/Projects/Search",
+        "/Portal/Publications/Search",
+        "/Portal/Persons/Search",
+        "/Portal/Institutions/Search",
+    ):
+        assert endpoint in script
+
+    resources = fetch_json("https://www.etis.ee/res/resource.json")
+    assert isinstance(resources, dict) and {"Et", "En"} <= resources.keys()
+    assert resources["En"].get("Projects") and resources["En"].get("Publications")
+
+
+def medicines_agency_statistics() -> None:
+    page_url = (
+        "https://www.ravimiamet.ee/en/statistics/statistics/"
+        "statistical-yearbooks"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(
+        r'href="([^"]+\.pdf[^"]*)"[^>]*>(.*?)</a>',
+        text,
+        re.IGNORECASE | re.DOTALL,
+    )
+    yearbooks = [
+        (href, re.sub(r"<[^>]+>", " ", label))
+        for href, label in links
+        if "statistical yearbook" in label.lower()
+    ]
+    assert content_type == "text/html" and len(yearbooks) >= 8
+    assert all(re.search(r"20\d{2}", label) for _, label in yearbooks)
+    pdf, pdf_type = fetch(urljoin(page_url, yearbooks[0][0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def medicines_register() -> None:
+    page_url = (
+        "https://www.ravimiregister.ee/"
+        "publichomepage.aspx?pv=PublicDownloads"
+    )
+    jar = CookieJar()
+    opener = build_opener(HTTPCookieProcessor(jar))
+    request = Request(page_url, headers={"User-Agent": USER_AGENT})
+    with opener.open(request, timeout=45) as response:
+        assert response.status == 200
+        page = response.read().decode("utf-8", "replace")
+    assert "ctl10$packagesCsvDownload" in page
+
+    hidden = {
+        name: unescape(value)
+        for name, value in re.findall(
+            r'<input[^>]+type="hidden"[^>]+name="([^"]+)"[^>]+value="([^"]*)"',
+            page,
+            re.IGNORECASE,
+        )
+    }
+    assert {"__VIEWSTATE", "__VIEWSTATEGENERATOR", "__EVENTVALIDATION"} <= hidden.keys()
+    hidden["__EVENTTARGET"] = "ctl10$packagesCsvDownload"
+    hidden["__EVENTARGUMENT"] = ""
+    post = Request(
+        page_url,
+        data=urlencode(hidden).encode(),
+        headers={
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/x-www-form-urlencoded",
+            "Referer": page_url,
+        },
+    )
+    with opener.open(post, timeout=60) as response:
+        assert response.status == 200
+        assert response.headers.get_content_type() == "application/octet-stream"
+        assert response.geturl().endswith("/Data/XML/pakendid.csv")
+        csv_head = response.read(500)
+    assert csv_head.startswith(
+        "\ufeffPakendi liik;Ravimi liik;Pakendi kood;Pakendi nimetus;ATC kood".encode()
+    )
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -1524,10 +1629,12 @@ CHECKS: dict[str, Callable[[], None]] = {
     "election-results-data": elections,
     "energy-data": energy,
     "economic-activities-register-mtr": economic_activities,
+    "education-data": education_data,
     "eu-funded-projects": eu_funded_projects,
     "environmental-charge-statistics": environmental_charges,
     "environmental-permit-decisions": environmental_permits,
     "estonia-2035-action-plan": estonia_2035,
+    "etis-research-information-system": etis,
     "food-business-approvals": food_businesses,
     "forest-register": forest_register,
     "geospatial-open-data": geospatial,
@@ -1546,6 +1653,8 @@ CHECKS: dict[str, Callable[[], None]] = {
     "kultuurkapital-grants-data": kultuurkapital_grants,
     "marital-property-register": marital_property,
     "maritime-economy-statistics": maritime_economy,
+    "medicines-agency-statistics": medicines_agency_statistics,
+    "medicines-register": medicines_register,
     "ministry-document-registries": ministry_documents,
     "mfa-development-cooperation-aid": development_cooperation,
     "mfa-sanctions": mfa_sanctions,

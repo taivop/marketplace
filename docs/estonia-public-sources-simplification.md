@@ -95,6 +95,8 @@ Administrative and social statistics audit: retained seven distinct sources but 
 
 Political-record audit: removed the duplicate Riigikogu draft-law webpage recipe and folded the tested draft search/detail endpoints into the existing parliamentary API contract. Replaced generic ERJK, party-membership, and presidential UI instructions with their JSON or CSV interfaces. Removed the undocumented MFA sanctions backend because it returns `null`; retained only the working official regulation and subject-list index.
 
+Education, research, and medicines audit: reduced education data to the three direct EHIS registry workbooks and removed the uncontracted HaridusSilm dashboard add-on. Kept ETIS as an explicitly browser-only public search after verifying rendered project records, while removing claims that its SPA paths are replayable APIs. Rebuilt medicines statistics around the yearbook PDF index and the Medicines Register around its session-backed WebForms CSV/XML exports.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

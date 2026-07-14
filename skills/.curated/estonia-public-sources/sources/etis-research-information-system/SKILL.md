@@ -1,65 +1,44 @@
 ---
 name: etis-research-information-system
-description: Retrieve public R&D records from ETIS by using browser-session-backed search endpoints and public portal views for projects, publications, persons, and institutions.
+description: Search public ETIS projects, publications, researchers, and institutions through its browser-rendered portal and stable record URLs.
 ---
 
 # ETIS Research Information System
 
 ## Use when
-- You need public Estonian research governance records (projects, publications, institutions, researchers).
-- You need repeatable ETIS search workflows with documented endpoint behavior.
+- You need public Estonian research projects, publications, researchers, or institutions.
+- You need stable ETIS detail URLs and visible project funding, dates, people, or institution fields.
 
 ## Avoid when
-- You require restricted internal ETIS data.
+- You need restricted internal ETIS data.
+- You have no browser-capable tool; stateless HTTP calls do not return the rendered records.
 
-## Inputs
-- Entity type (`projects`, `publications`, `persons`, `institutions`, etc.).
-- Search/filter terms.
+## Browser routes
+- Projects: https://www.etis.ee/Portal/Projects/Index
+- Publications: https://www.etis.ee/Portal/Publications/Index
+- Researchers: https://www.etis.ee/Portal/Persons/Index
+- Institutions: https://www.etis.ee/Portal/Institutions/Index
+- Detail pattern: `https://www.etis.ee/Portal/{Entity}/Display/{uuid}`
 
-## Outputs
-- Structured ETIS search results with captured filter metadata and source URLs.
+## Workflow
+1. Open the exact entity route in a full browser and wait for the result count and list to render.
+2. Enter a search word or use the visible side filters, then activate `Search` or `Filter`.
+3. Capture each selected record's `/Portal/{Entity}/Display/{uuid}` link and visible fields.
+4. Use the portal's export controls when bulk output is required; retain the selected filters with the downloaded file.
 
-## Access reality statement
-- Access type: `UI export`/`UI copy-only` with browser-session endpoint calls.
-- Verified on 2026-02-24.
-- Portal bundle exposes many `/Portal/...` endpoints; direct stateless POSTs can return SPA HTML, so browser session context is required.
-
-## Primary endpoints
-- ETIS portal: https://www.etis.ee/
-- Example portal endpoints discovered in frontend bundle:
-  - `/Portal/Projects/Search`
-  - `/Portal/Publications/Search`
-  - `/Portal/Persons/Search`
-  - `/Portal/Institutions/Search`
-  - `/Portal/*/GetFilters`
-
-## Retrieval workflow (reproducible)
-1. Open ETIS in browser and select target entity search view.
-2. Apply filters through UI and observe network calls to `/Portal/.../Search` and `/Portal/.../GetFilters`.
-3. Capture request payloads, response format, and current session headers/cookies used by browser.
-4. Re-run equivalent requests within same browser session context when needed.
-5. Return parsed records and include endpoint/payload metadata for reproducibility.
-
-## Request/query contract
-- Endpoint family: `/Portal/<Entity>/{Search|GetFilters}`.
-- Requests are JSON-like/XHR from SPA context; session and anti-forgery context may be required.
-- Unauthenticated direct POST without browser context may return portal HTML instead of data payload.
+## Access reality
+- Public browser-rendered records, verified 2026-07-14 without login.
+- The project route rendered more than 26,000 results with titles, UUID detail links, dates, funding, principal investigator, project number, funder, and institution.
+- The JavaScript bundle names `/Portal/.../Search` and `/GetFilters`, but direct stateless requests return the SPA HTML shell. Do not present those paths as a public API.
 
 ## Output schema expectations
-- `entity_type`
-- `source_url`
-- `search_payload`
-- `record_id`
-- `title_or_name`
-- `institution`
-- `start_date`/`end_date` (if present)
-- `funding_or_status` (if present)
+- Keep entity type, UUID, detail URL, title/name, dates, institution, people, funding/status fields shown, selected filters, and retrieval timestamp.
 
 ## Limits and caveats
-- API contract is not publicly documented in a stable spec.
-- Endpoint behavior depends on SPA state/session.
-- Field schemas vary significantly by entity type.
+- Browser execution is required; raw HTML clients see only the app shell.
+- Field schemas differ by entity type, and some older records are incomplete.
+- Search results may include future-dated projects; do not infer current activity from list order alone.
 
 ## Verification hooks
-- ETIS frontend JS includes endpoint strings such as `/Portal/Projects/Search`, `/Portal/Publications/Search`, `/Portal/Persons/Search`.
-- Direct POST to `/Portal/Projects/GetFilters` without browser session returns `text/html`, confirming UI-session dependency.
+- Require a rendered result count and at least one stable `/Display/{uuid}` link before reporting success.
+- For projects, require the visible title plus at least one of dates, project number, funding, principal investigator, funder, or institution.
