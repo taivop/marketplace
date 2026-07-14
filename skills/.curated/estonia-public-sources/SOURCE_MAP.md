@@ -59,7 +59,6 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Cultural grants and allocation rounds | `sources/kultuurkapital-grants-data` |
 | Internal security annual reviews (KAPO) | `sources/internal-security-annual-reviews` |
 | Consumer Disputes Committee decisions | `sources/consumer-technical-regulator-decisions` |
-| State services catalog and public-service delivery | `sources/state-services-catalog` |
 | Rescue incidents and emergency operations | `sources/rescue-incident-data` |
 | Language-law supervision and annual activity reports | `sources/language-law-supervision` |
 | Marital property registry | `sources/marital-property-register` |

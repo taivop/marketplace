@@ -97,6 +97,8 @@ Political-record audit: removed the duplicate Riigikogu draft-law webpage recipe
 
 Education, research, and medicines audit: reduced education data to the three direct EHIS registry workbooks and removed the uncontracted HaridusSilm dashboard add-on. Kept ETIS as an explicitly browser-only public search after verifying rendered project records, while removing claims that its SPA paths are replayable APIs. Rebuilt medicines statistics around the yearbook PDF index and the Medicines Register around its session-backed WebForms CSV/XML exports.
 
+Procurement, assets, tax, and tourism audit: replaced four generic UI recipes with the procurement register's monthly notice XML, RKVR's seven nightly XML extracts and XSD, EMTA's session-and-CSRF public inquiry forms, and the tourism catalog's canonical XLSX distribution API. Removed the eesti.ee state-services wrapper because its client-only navigation page did not provide the promised public service records or a verified catalog interface.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

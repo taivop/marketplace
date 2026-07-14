@@ -259,6 +259,24 @@ def business_register() -> None:
     assert body == b"PK\x03\x04"
 
 
+def procurement() -> None:
+    base = "https://riigihanked.riik.ee/rhr/api/public/v1/opendata"
+    expected = {
+        "notice": 'filename="HT_2019_1.xml"',
+        "notice_award": 'filename="HLST_2019_1.xml"',
+    }
+    for notice_type, filename in expected.items():
+        url = f"{base}/{notice_type}/2019/month/1/xml"
+        request = Request(url, headers={"User-Agent": USER_AGENT})
+        with urlopen(request, timeout=60) as response:
+            assert response.status == 200
+            assert response.headers.get_content_type() == "application/vnd.ms-excel"
+            assert filename in response.headers.get("Content-Disposition", "")
+            head = response.read(500)
+        assert head.startswith(b'<?xml version="1.0" encoding="UTF-8"')
+        assert b"<OPEN-DATA><TED_ESENDERS" in head
+
+
 def food_businesses() -> None:
     jar = CookieJar()
     opener = build_opener(HTTPCookieProcessor(jar))
@@ -340,6 +358,72 @@ def state_ownership() -> None:
     assert "State-owned companies" in text and "Share of state" in text
     assert "Foundations" in text and "AS ALARA" in text
     assert re.search(r"As of (?:December|the end of) 20\d{2}", text)
+
+
+def state_assets() -> None:
+    base = "https://riigivara.fin.ee/rkvr/api/avaandmed"
+    extracts = {
+        "KINNISVARAD": "kinnisvarad",
+        "MAAD": "maad",
+        "HOONED": "hooned",
+        "RAJATISED": "rajatised",
+        "MENETLUSED": "menetlused",
+        "LEPINGUD": "lepingud",
+        "KINNISVARAYKSUSED": "kinnisvarayksused",
+    }
+    for name, root in extracts.items():
+        request = Request(f"{base}/{name}", headers={"User-Agent": USER_AGENT})
+        with urlopen(request, timeout=60) as response:
+            assert response.status == 200
+            assert response.headers.get_content_type() == "text/plain"
+            disposition = response.headers.get("Content-Disposition", "")
+            head = response.read(160)
+        assert f"filename={root}.xml" in disposition
+        assert head.startswith(b'<?xml version="1.0" encoding="UTF-8"')
+        assert f"<{root}>".encode() in head
+
+    xsd, content_type = fetch(f"{base}-xsd")
+    schema = ET.fromstring(xsd)
+    assert content_type == "application/xsd+xml"
+    assert schema.tag == "{http://www.w3.org/2001/XMLSchema}schema"
+
+
+def tax_public_inquiries() -> None:
+    def query(kind: str) -> str:
+        jar = CookieJar()
+        opener = build_opener(HTTPCookieProcessor(jar))
+        form_url = f"https://apps.emta.ee/saqu/public/{kind}?lang=en"
+        request = Request(form_url, headers={"User-Agent": USER_AGENT})
+        with opener.open(request, timeout=45) as response:
+            assert response.status == 200
+            form = response.read().decode("utf-8", "replace")
+        token = re.search(r'name="CSRFToken"[^>]*value="([^"]+)"', form)
+        assert token
+        payload = urlencode(
+            {
+                "personCode": "70000349",
+                "p_submit": "Search",
+                "CSRFToken": token.group(1),
+            }
+        ).encode()
+        post = Request(
+            f"https://apps.emta.ee/saqu/public/{kind}/query",
+            data=payload,
+            headers={
+                "User-Agent": USER_AGENT,
+                "Content-Type": "application/x-www-form-urlencoded",
+                "Referer": form_url,
+            },
+        )
+        with opener.open(post, timeout=45) as response:
+            assert response.status == 200
+            return response.read().decode("utf-8", "replace")
+
+    reference = query("reference")
+    assert "Maksu- ja Tolliamet" in reference and "01000012" in reference
+    tax_debt = query("taxdebt")
+    assert "Maksu- ja Tolliamet (70000349)" in tax_debt
+    assert "Result of inquiry of arrears" in tax_debt
 
 
 def communicable_diseases() -> None:
@@ -1446,6 +1530,41 @@ def unemployment_statistics() -> None:
     assert workbook == b"PK\x03\x04"
 
 
+def tourism_information_system() -> None:
+    slug = (
+        "turismitoodete-ja-teenuste-andmed-puhkaeestis.ee-ja-"
+        "visitestonia.com-eesti-riiklikus-turismiinfosusteemis"
+    )
+    headers = {"Origin": "https://andmed.eesti.ee"}
+    data = fetch_json(
+        f"https://andmed.eesti.ee/api/datasets/slug/{slug}",
+        headers=headers,
+    )
+    assert isinstance(data, dict) and data.get("slug") == slug
+    assert data.get("status") == "COMPLETED"
+    assert data.get("organization", {}).get("slug") == (
+        "ettevotluse-ja-innovatsiooni-sihtasutus"
+    )
+    identifier = data.get("datasetIdentifier")
+    distributions = data.get("distributions", [])
+    xlsx = [item for item in distributions if item.get("format") == "XLSX"]
+    assert identifier and len(xlsx) >= 6
+    assert all(item.get("titleEn") for item in xlsx)
+    assert all(int(item.get("byteSize", 0)) > 10_000 for item in xlsx)
+    selected = xlsx[0]
+    canonical = (
+        f"https://andmed.eesti.ee/api/v2/datasets/{identifier}/distribution/"
+        f"{selected['id']}/file"
+    )
+    assert selected.get("accessUrls") == [canonical]
+    workbook, workbook_type = fetch(canonical, headers=headers, limit=4)
+    assert workbook_type in {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+    }
+    assert workbook == b"PK\x03\x04"
+
+
 def education_data() -> None:
     page_url = "https://www.ehis.ee/"
     body, content_type = fetch(page_url)
@@ -1668,6 +1787,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "political-party-membership": political_party_membership,
     "president-decisions-decrees": president_decisions,
     "prison-annual-reviews": prison_reviews,
+    "procurement-data": procurement,
     "public-finance-data": public_finance,
     "public-sector-statistics-fin": public_sector_statistics,
     "public-sector-it-systems-riha": riha,
@@ -1678,11 +1798,14 @@ CHECKS: dict[str, Callable[[], None]] = {
     "strategic-development-documents-registry": strategic_documents,
     "state-ownership-data": state_ownership,
     "state-audit-reports": state_audits,
+    "state-assets-register": state_assets,
     "state-port-register": state_ports,
     "supreme-court-judgments": supreme_court,
     "tallinn-open-data": tallinn,
     "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,
+    "tax-public-inquiries": tax_public_inquiries,
+    "tourism-information-system-dataset": tourism_information_system,
     "transport-traffic-data": transport,
     "unemployment-statistics": unemployment_statistics,
     "vaccination-statistics": vaccinations,
