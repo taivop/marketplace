@@ -1,0 +1,4 @@
+interface:
+  display_name: "Subtract"
+  short_description: "Simplify by finding what can be removed"
+  default_prompt: "Use $subtract to simplify this plan by identifying what can be cut or merged."
