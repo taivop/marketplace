@@ -1,58 +1,50 @@
 ---
 name: healthcare-professionals-register
-description: Use Health Board healthcare professionals registration pages for registry-process context and official registration evidence extraction.
+description: Query MEDRE's public JSON API for registered healthcare professionals and download its occupation, speciality, and pharmacist open-data files.
 ---
 
-# Healthcare Professionals Register
+# Healthcare Professionals Register (MEDRE)
 
-## Use when
-- You need official registration process context for healthcare professionals.
-- You need structured extraction of publicly available registration outputs.
+## Access
 
-## Avoid when
-- You need private personnel records not publicly accessible.
+- Frontend: `https://medre.tehik.ee/home`
+- API base: `https://medre.tehik.ee/api-common`
+- Public JSON search and XML downloads; no login is required for the endpoints below.
 
-## Inputs
-- Profession type, registration scope, and period.
+## Retrieve
 
-## Outputs
-- Structured registration-process/output references.
+POST JSON to `/public/persons/filter`. Paging fields are `page` (zero-based), `size`, and optional `sort`. For an unfiltered page:
 
-## Primary endpoints
-- Searchable register (MEDRE): https://medre.tehik.ee/home
-- Registration info: https://www.terviseamet.ee/en/healthcare/registration-of-health-care-professionals
+```json
+{"page": 0, "size": 10}
+```
 
-## Workflow
-1. Identify register route and eligibility/output scope.
-2. Extract public registration-related fields and references.
-3. Normalize profession categories.
-4. Return structured output and access caveats.
+The response has `content`, `page`, `size`, `totalElements`, and `totalPages`. Each person includes `id`, `firstName`, `lastName`, `occupationCodes`, `specialities`, and `specialistCodes`. Read occupation and speciality IDs from:
 
-## Human setup (when needed)
-- If lookup/verification requires interactive forms, guide user step-by-step and continue from provided outputs.
+- `GET /public/persons/occupations`
+- `GET /public/persons/specialities`
 
-## Quality checks
-- Separate process guidance from register results.
-- Keep official category and status labels unchanged.
+Bulk/classifier downloads:
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.terviseamet.ee/en/healthcare/registration-of-health-care-professionals (HTTP 200, text/html;, file links detected: 2)
+- `/public/persons/pharmacists/open-data` -> `od_apteekrid.xml`
+- `/public/persons/occupations/open-data` -> `od_kutsed.xml`
+- `/public/persons/specialities/open-data` -> `od_erialad.xml`
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+The frontend's public search form is authoritative for additional filter names; preserve the exact POST payload used.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Return
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- Preserve the public person ID, name, registration code, occupation and speciality codes/names, registration dates, source URL, query, and retrieval time.
+- Keep multiple occupations and specialities as arrays rather than flattening them into a single label.
+- Report `totalElements` and all paging parameters.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Limits
+
+- The API exposes professional registration, not employment history or private personnel records.
+- Unfiltered search is paginated; do not mistake one page for the complete register.
+- The dedicated bulk person file currently covers pharmacists; other professionals are available through paged JSON search.
+
+## Verify
+
+- Require `/public/persons/filter` to return JSON with nonempty `content` for `{"page":0,"size":2}` and the documented person fields.
+- Require classifier endpoints to return nonempty JSON or XML. Reject the single-page frontend shell as register data.

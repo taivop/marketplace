@@ -75,6 +75,8 @@ RIK interface audit: removed the access-approved e-File statistics environment a
 
 Transport Administration interface audit: removed fairway-dues and ship-registration guidance wrappers. Rebuilt maritime economy around the Tableau CSV export and State Port Register around its public settings, list, and detail APIs.
 
+Health Board interface audit: retained four distinct public datasets but replaced their generic wrappers with exact bulletin/precept file discovery, MEDRE JSON/XML API, and vaccination Tableau export contracts.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

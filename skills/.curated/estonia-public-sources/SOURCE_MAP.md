@@ -35,7 +35,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Civil-service pay governance and salary disclosure templates | `sources/civil-service-pay-governance` |
 | Health stats, medicines, health supervision | `sources/health-statistics`, `sources/medicines-register`, `sources/health-supervision-decisions` |
 | Communicable disease bulletins and vaccination monitoring | `sources/communicable-disease-bulletins`, `sources/vaccination-statistics` |
-| Healthcare professional registration context | `sources/healthcare-professionals-register` |
+| Healthcare professionals and registration codes | `sources/healthcare-professionals-register` |
 | Health insurance financing and service volumes | `sources/health-insurance-fund-reports` |
 | Medicines market and regulatory annual statistics | `sources/medicines-agency-statistics` |
 | Welfare and unemployment | `sources/social-insurance-statistics`, `sources/unemployment-statistics`, `sources/health-welfare-open-data` |

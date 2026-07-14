@@ -10,7 +10,7 @@ import json
 import re
 import sys
 from typing import Callable
-from urllib.parse import urlencode
+from urllib.parse import urlencode, urljoin
 from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 import xml.etree.ElementTree as ET
 
@@ -195,6 +195,66 @@ def state_ownership() -> None:
     assert re.search(r"As of (?:December|the end of) 20\d{2}", text)
 
 
+def communicable_diseases() -> None:
+    page_url = (
+        "https://www.terviseamet.ee/en/communicable-diseases/statistics/"
+        "communicable-disease-bulletins"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    bulletin_links = [link for link in links if "EEpiR" in link]
+    assert content_type == "text/html" and len(bulletin_links) >= 12
+    pdf, pdf_type = fetch(urljoin(page_url, bulletin_links[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def health_supervision() -> None:
+    page_url = "https://www.terviseamet.ee/ettekirjutused"
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    precepts = [link for link in links if "ettekirjutus" in link.lower()]
+    assert content_type == "text/html" and len(precepts) >= 5
+    pdf, pdf_type = fetch(urljoin(page_url, precepts[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def healthcare_professionals() -> None:
+    data = fetch_json(
+        "https://medre.tehik.ee/api-common/public/persons/filter",
+        data=b'{"page":0,"size":2}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(data, dict) and data.get("content")
+    assert {"page", "size", "totalElements", "totalPages"} <= data.keys()
+    assert {
+        "id",
+        "firstName",
+        "lastName",
+        "occupationCodes",
+        "specialities",
+    } <= data["content"][0].keys()
+
+
+def vaccinations() -> None:
+    body, content_type = fetch(
+        "https://www.terviseamet.ee/en/nakkushaigused/statistika/vaktsineerimine"
+    )
+    text = body.decode("utf-8", "replace")
+    assert content_type == "text/html"
+    assert "Covid-19vaccination/Vaccinationmap" in text
+    assert "Influenzavaccination/Mapview" in text
+
+    csv, csv_type = fetch(
+        "https://tableauapp.tehik.ee/t/Terviseamet/views/"
+        "Influenzavaccination/Mapview.csv?:showVizHome=no"
+    )
+    rows = csv.decode("utf-8-sig", "replace").splitlines()
+    assert csv_type == "text/csv" and len(rows) >= 2
+    assert "Coverage" in rows[0] and "202" in rows[1]
+
+
 def marital_property() -> None:
     params = {
         "SearchFilter.AlgusKp": "01.01.2025",
@@ -369,10 +429,13 @@ def muis() -> None:
 CHECKS: dict[str, Callable[[], None]] = {
     "bank-of-statistics": bank,
     "business-register-open-data": business_register,
+    "communicable-disease-bulletins": communicable_diseases,
     "election-results-data": elections,
     "energy-data": energy,
     "food-business-approvals": food_businesses,
     "geospatial-open-data": geospatial,
+    "health-supervision-decisions": health_supervision,
+    "healthcare-professionals-register": healthcare_professionals,
     "legal-acts-data": legal_acts,
     "legislation-workflow-eis": legislation_workflow,
     "marital-property-register": marital_property,
@@ -389,6 +452,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,
     "transport-traffic-data": transport,
+    "vaccination-statistics": vaccinations,
     "weather-data": weather,
 }
 
