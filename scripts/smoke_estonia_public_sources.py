@@ -11,7 +11,9 @@ import json
 import re
 import subprocess
 import sys
+import time
 from typing import Callable
+from urllib.error import HTTPError
 from urllib.parse import urlencode, urljoin
 from urllib.request import HTTPCookieProcessor, Request, build_opener, urlopen
 import xml.etree.ElementTree as ET
@@ -40,6 +42,18 @@ def fetch_json(url: str, **kwargs: object) -> object:
     if content_type != "application/json":
         raise AssertionError(f"expected JSON, got {content_type}")
     return json.loads(body)
+
+
+def fetch_json_with_429_backoff(url: str) -> object:
+    for delay in (0, 5, 10):
+        if delay:
+            time.sleep(delay)
+        try:
+            return fetch_json(url)
+        except HTTPError as exc:
+            if exc.code != 429 or delay == 10:
+                raise
+    raise AssertionError("unreachable")
 
 
 def fetch_with_curl(
@@ -128,13 +142,111 @@ def legal_acts() -> None:
 
 
 def riigikogu() -> None:
-    data = fetch_json(
+    data = fetch_json_with_429_backoff(
         "https://api.riigikogu.ee/api/agenda/plenary"
         "?startDate=2025-01-01&endDate=2025-01-31&lang=EN"
     )
     assert isinstance(data, dict) and data.get("sittings")
     assert {"weekStartDate", "weekEndDate", "title", "sittings"} <= data.keys()
     assert {"uuid", "sittingDateTime", "agendaItems"} <= data["sittings"][0].keys()
+
+    drafts = fetch_json_with_429_backoff(
+        "https://api.riigikogu.ee/api/volumes/drafts"
+        "?initiatedStartDate=2026-01-01&initiatedEndDate=2026-01-31"
+        "&lang=EN&page=0&size=2"
+    )
+    assert isinstance(drafts, dict) and drafts.get("_embedded", {}).get("content")
+    draft = drafts["_embedded"]["content"][0]
+    assert {
+        "uuid",
+        "title",
+        "mark",
+        "draftTypeCode",
+        "activeDraftStage",
+        "proceedingStatus",
+        "initiated",
+    } <= draft.keys()
+
+
+def party_funding() -> None:
+    parties = fetch_json("https://erjk.ee/api/quarterly-reports/parties")
+    assert isinstance(parties, list) and parties
+    assert {"party_id", "party_name"} <= parties[0].keys()
+
+    rows = fetch_json(
+        "https://erjk.ee/api/quarterly-reports/queries/receipts"
+        "?party_id=159&category_id=all&period=2025&quarter=quarter"
+    )
+    assert isinstance(rows, list) and rows
+    assert {
+        "amount",
+        "period",
+        "party_id",
+        "party_name",
+        "category_id",
+        "category_name",
+        "quarter",
+    } <= rows[0].keys()
+
+
+def political_party_membership() -> None:
+    chooser_url = "https://ariregister.rik.ee/eng/political_party"
+    body, content_type = fetch(chooser_url)
+    text = body.decode("utf-8", "replace")
+    registry_codes = re.findall(r'/eng/political_party/members/(\d{8})', text)
+    assert content_type == "text/html" and len(set(registry_codes)) >= 10
+
+    csv_body, csv_type = fetch(
+        f"{chooser_url}/members/{registry_codes[0]}?download=CSV"
+    )
+    lines = csv_body.decode("utf-8-sig").splitlines()
+    assert csv_type == "text/csv" and len(lines) > 1
+    assert lines[0].split(";") == [
+        "First name",
+        "Last name",
+        "Date of birth",
+        "Date of starting membership",
+        "Suspension of membership in political party",
+    ]
+
+
+def president_decisions() -> None:
+    data = fetch_json(
+        "https://p.president.ee/et/entity/block/decisions_list?_format=json"
+    )
+    assert isinstance(data, list) and len(data) >= 100
+    assert {
+        "nid",
+        "title",
+        "field_date",
+        "body",
+        "field_head_of_state",
+        "view_node",
+    } <= data[0].keys()
+    assert re.fullmatch(r"\d{4}-\d{2}-\d{2}", data[0]["field_date"])
+
+
+def mfa_sanctions() -> None:
+    page_url = (
+        "https://www.vm.ee/en/activity/international-sanctions/"
+        "sanctions-government-republic-estonia"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    act_links = set(
+        re.findall(r'href="(https://www\.riigiteataja\.ee/akt/[^"]+)', text)
+    )
+    subject_links = set()
+    for href, label in re.findall(
+        r'<a\b[^>]*href="([^"]+)"[^>]*>(.*?)</a>',
+        text,
+        re.IGNORECASE | re.DOTALL,
+    ):
+        label = re.sub(r"<[^>]+>", " ", label)
+        if "list of subjects" in unescape(label).lower():
+            subject_links.add(href)
+    assert content_type == "text/html" and len(act_links) >= 7
+    assert len(subject_links) >= 3
 
 
 def business_register() -> None:
@@ -1436,12 +1548,16 @@ CHECKS: dict[str, Callable[[], None]] = {
     "maritime-economy-statistics": maritime_economy,
     "ministry-document-registries": ministry_documents,
     "mfa-development-cooperation-aid": development_cooperation,
+    "mfa-sanctions": mfa_sanctions,
     "muis-open-data": muis,
     "open-data": open_data,
     "official-notices": official_notices,
     "ombudsman-opinions": ombudsman_reports,
+    "party-funding-data": party_funding,
     "patent-and-trademark-registers": patent_registers,
     "planning-decisions": planning_register,
+    "political-party-membership": political_party_membership,
+    "president-decisions-decrees": president_decisions,
     "prison-annual-reviews": prison_reviews,
     "public-finance-data": public_finance,
     "public-sector-statistics-fin": public_sector_statistics,

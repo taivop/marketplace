@@ -93,6 +93,8 @@ Environment and land-use audit: removed the generic Environmental Portal topic w
 
 Administrative and social statistics audit: retained seven distinct sources but replaced generic discovery wrappers. Rebuilt TAI health statistics around its PxWeb API, narrowed TEHIK open data to its two live seasonal COVID-19 PostgREST datasets, and replaced the broken Unemployment Fund page with national-catalog metadata and distribution APIs. Reduced Finance Ministry, Health Insurance Fund, and Social Insurance Board recipes to exact file indexes, workbook semantics, and signature checks.
 
+Political-record audit: removed the duplicate Riigikogu draft-law webpage recipe and folded the tested draft search/detail endpoints into the existing parliamentary API contract. Replaced generic ERJK, party-membership, and presidential UI instructions with their JSON or CSV interfaces. Removed the undocumented MFA sanctions backend because it returns `null`; retained only the working official regulation and subject-list index.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

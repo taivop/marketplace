@@ -8,7 +8,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 |---|---|
 | "official stats", "time series", "national indicators", macro/financial statistics | `sources/statistics-api`, `sources/bank-of-statistics`, `sources/open-data` |
 | Parliament votes, MPs, sittings, agendas, stenograms | `sources/riigikogu-open-data` |
-| Draft law lifecycle, ministry coordination, and public consultations | `sources/legislation-workflow-eis`, `sources/riigikogu-draft-laws`, `sources/riigiteataja-draft-acts` |
+| Draft law lifecycle, ministry coordination, and public consultations | `sources/legislation-workflow-eis`, `sources/riigikogu-open-data`, `sources/riigiteataja-draft-acts` |
 | Final laws and legal texts | `sources/legal-acts-data` |
 | President decisions and decrees | `sources/president-decisions-decrees` |
 | Cabinet/government meeting agendas | `sources/government-session-agendas` |
@@ -69,7 +69,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Research projects/publications/institutions (ETIS) | `sources/etis-research-information-system` |
 | Registered and approved food or feed business operators | `sources/food-business-approvals` |
 | MFA development cooperation and humanitarian aid records | `sources/mfa-development-cooperation-aid` |
-| MFA sanctions implementation and sanctions backend endpoint | `sources/mfa-sanctions` |
+| Estonia-specific sanctions regulations and MFA subject-list links | `sources/mfa-sanctions` |
 | Defence public-opinion surveys | `sources/defence-public-opinion-surveys` |
 | Defence policy/legal baseline and defence budget documents | `sources/defence-policy-budget-documents` |
 | Tourism information system dataset (andmed.eesti.ee) | `sources/tourism-information-system-dataset` |
