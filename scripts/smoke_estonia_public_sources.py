@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+from html import unescape
 from http.cookiejar import CookieJar
 import json
 import re
@@ -182,6 +183,62 @@ def public_finance() -> None:
     assert "/sites/default/files/" in text and ".xlsx" in text
 
 
+def state_ownership() -> None:
+    body, content_type = fetch(
+        "https://www.fin.ee/en/public-procurement-state-aid-and-assets/"
+        "state-assets/state-stakeholdings"
+    )
+    text = body.decode("utf-8", "replace")
+    assert content_type == "text/html"
+    assert "State-owned companies" in text and "Share of state" in text
+    assert "Foundations" in text and "AS ALARA" in text
+    assert re.search(r"As of (?:December|the end of) 20\d{2}", text)
+
+
+def marital_property() -> None:
+    params = {
+        "SearchFilter.AlgusKp": "01.01.2025",
+        "SearchFilter.LoppKp": "31.01.2025",
+        "SearchFilter.Kehtivad": "true",
+        "SearchFilter.Suletud": "true",
+        "SearchFilter.VarasuhteLiik.VaralahutusStat": "true",
+        "SearchFilter.VarasuhteLiik.VarayhisusStat": "true",
+        "SearchFilter.VarasuhteLiik.VaraJuurdekasvuStat": "true",
+        "SearchFilter.VarasuhteLiik.ValisriigiOiguseStat": "true",
+        "SearchFilter.Dokumendid.AbiellumisAvaldus": "true",
+        "SearchFilter.Dokumendid.Abieluvaraleping": "true",
+        "SearchFilter.Dokumendid.Kohtulahend": "true",
+        "SearchFilter.Dokumendid.Kooseluleping": "true",
+        "SearchFilter.Dokumendid.MuuDokument": "true",
+    }
+    body, content_type = fetch(
+        "https://abieluvararegister.rik.ee/Statistika/Otsi?" + urlencode(params),
+        headers={
+            "X-Requested-With": "XMLHttpRequest",
+            "Referer": "https://abieluvararegister.rik.ee/Statistika",
+        },
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert "01.01.2025 - 31.01.2025" in text
+    assert "Kehtivaid kaarte kokku" in text and "Suletud kaarte kokku" in text
+    assert "Varalahusus" in text and "Varaühisus" in text
+
+
+def ministry_documents() -> None:
+    body, content_type = fetch(
+        "https://adr.rik.ee/jm/kiirotsing",
+        data=urlencode({"input": "riigieelarve", "pageNumber": "1"}).encode(),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    text = body.decode("utf-8", "replace")
+    assert content_type == "text/html"
+    for heading in ("Viit", "Reg. kpv", "Pealkiri", "Dokumendi liik"):
+        assert heading in text
+    assert re.search(r'/jm/dokument/\d+', text)
+    assert "riigieelarve" in text.lower()
+
+
 def tax_customs() -> None:
     body, content_type = fetch(
         "https://ncfailid.emta.ee/s/e4DneiWeKFfje6d/download/"
@@ -221,6 +278,33 @@ def transport() -> None:
         headers={"Content-Type": "application/json"},
     )
     assert data == {"data": {"__typename": "QueryType"}}
+
+
+def maritime_economy() -> None:
+    body, content_type = fetch(
+        "https://public.tableau.com/views/Surveyofmaritimeeconomy/"
+        "THEIMPACTOFTHEMARITIMESECTORONTHEESTONIANECONOMY.csv"
+        "?:showVizHome=no"
+    )
+    text = body.decode("utf-8-sig", "replace")
+    assert content_type == "text/csv"
+    header, *rows = text.splitlines()
+    assert rows and "sektor" in header
+    assert "MÜÜGITULU" in header and "TÖÖTAJATE ARV" in header
+
+
+def state_ports() -> None:
+    settings = fetch_json("https://www.sadamaregister.ee/settings")
+    assert isinstance(settings, dict) and settings.get("ApiBaseUrl")
+    ports = fetch_json(settings["ApiBaseUrl"] + "/ports/public-active")
+    assert isinstance(ports, list) and ports
+    assert {
+        "publicId",
+        "name",
+        "address",
+        "bodyOfWaterName",
+        "additionalServices",
+    } <= ports[0].keys()
 
 
 def geospatial() -> None:
@@ -291,11 +375,16 @@ CHECKS: dict[str, Callable[[], None]] = {
     "geospatial-open-data": geospatial,
     "legal-acts-data": legal_acts,
     "legislation-workflow-eis": legislation_workflow,
+    "marital-property-register": marital_property,
+    "maritime-economy-statistics": maritime_economy,
+    "ministry-document-registries": ministry_documents,
     "muis-open-data": muis,
     "open-data": open_data,
     "public-finance-data": public_finance,
     "riigikogu-open-data": riigikogu,
     "statistics-api": statistics,
+    "state-ownership-data": state_ownership,
+    "state-port-register": state_ports,
     "tallinn-open-data": tallinn,
     "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,

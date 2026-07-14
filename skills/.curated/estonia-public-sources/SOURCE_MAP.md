@@ -18,21 +18,18 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Registry of active strategic development documents | `sources/strategic-development-documents-registry` |
 | Lobbying transparency | `sources/lobby-meetings` |
 | Procurement/tenders/contracts | `sources/procurement-data` |
-| Procurement review disputes and supervisory actions | `sources/procurement-review`, `sources/procurement-state-supervision` |
 | Party finance and party membership | `sources/party-funding-data`, `sources/political-party-membership` |
 | State audits/constitutional oversight | `sources/state-audit-reports`, `sources/ombudsman-opinions` |
 | Supreme Court and court case flows | `sources/supreme-court-judgments`, `sources/court-proceedings-data`, `sources/court-system-statistics` |
-| Justice case-flow analytics | `sources/e-file-statistics` |
 | Prison system annual operations | `sources/prison-annual-reviews` |
 | Official notices, insolvency announcements, summons | `sources/official-notices` |
 | Business entities and company baseline data | `sources/business-register-open-data` |
-| Property rights / land register | `sources/land-register-kinnistusraamat` |
 | Licensed economic activity (MTR) | `sources/economic-activities-register-mtr` |
 | State assets / state ownership | `sources/state-assets-register`, `sources/state-ownership-data` |
 | State real-estate register open data (RKVR) | `sources/state-assets-register` |
 | Agriculture support recipients / EU funded projects | `sources/agricultural-subsidies-pria`, `sources/eu-funded-projects` |
 | Taxes and public tax inquiries | `sources/tax-customs-data`, `sources/tax-public-inquiries` |
-| Budget, public finance, municipal benchmarking | `sources/public-finance-data`, `sources/local-government-finance-benchmarks` |
+| Budget and public finance | `sources/public-finance-data` |
 | State budget strategy (RES), annual budget packages, liabilities, investor relations, consolidated accounting | `sources/public-finance-data` |
 | Public-sector workforce/admin statistics | `sources/public-sector-statistics-fin` |
 | Civil-service pay governance and salary disclosure templates | `sources/civil-service-pay-governance` |
@@ -48,9 +45,9 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Planning, construction, cadaster/geospatial | `sources/planning-decisions`, `sources/construction-register`, `sources/geospatial-open-data` |
 | Transport/traffic and energy system operations | `sources/transport-traffic-data`, `sources/energy-data` |
 | National public transport routes/stops and Peatus API | `sources/transport-traffic-data` |
-| Vehicle, aircraft, ship, and port registry checks | `sources/vehicle-background-check`, `sources/aircraft-register`, `sources/ship-registers`, `sources/state-port-register` |
+| Vehicle, aircraft, and port registry checks | `sources/vehicle-background-check`, `sources/aircraft-register`, `sources/state-port-register` |
 | Published aviation safety reports | `sources/aviation-safety-reports` |
-| Maritime economy indicators and fairway dues | `sources/maritime-economy-statistics`, `sources/fairway-dues` |
+| Maritime economy indicators | `sources/maritime-economy-statistics` |
 | Cyber incidents and digital government operations | `sources/cyber-incidents-cert-ee`, `sources/public-sector-it-systems-riha`, `sources/x-road-usage-statistics`, `sources/digital-government-studies` |
 | e-Residency operational dashboard metrics | `sources/e-residency-dashboard` |
 | Municipal operations and datasets (Tallinn/Tartu) | `sources/tallinn-open-data`, `sources/tallinn-legal-acts-register`, `sources/tallinn-council-documents`, `sources/tartu-document-register`, `sources/open-data` |

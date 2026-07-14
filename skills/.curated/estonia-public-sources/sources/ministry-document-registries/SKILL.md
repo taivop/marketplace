@@ -1,60 +1,42 @@
 ---
 name: ministry-document-registries
-description: Query Estonia's official ministry and agency document registries (ADR network) for operational records, incoming/outgoing documents, and workflow traceability.
+description: Search the RIK-hosted public document-register network for ministry, agency, court, prosecution, prison, and other administrative records.
 ---
 
-# Ministry Document Registries
+# Public Document Registers (ADR)
 
-## Use when
-- You need official document-level operational records from ministries/agencies.
-- You need a trace of administrative workflow (registration, correspondence, routing).
+## Access
 
-## Avoid when
-- You need enacted legal texts only.
+- Agency index: `https://adr.rik.ee/`
+- Each agency has a path prefix such as `jm`, `ram`, `som`, `riigikantselei`, `ria`, or `transpordiamet`.
+- Public server-rendered HTML; no login or JavaScript is required.
 
-## Inputs
-- Institution, date range, document keywords, registry identifiers.
+## Retrieve
 
-## Outputs
-- Registry search results with document metadata and source links.
+1. Fetch the agency index and choose the exact organization path.
+2. For a keyword search, POST form data to `https://adr.rik.ee/<agency>/kiirotsing`:
 
-## Primary endpoints
-- ADR network root: https://adr.rik.ee/
-- RIK agency document register: https://www.rik.ee/en/agency/document-register
+```text
+input=riigieelarve&pageNumber=1
+```
 
-## Workflow
-1. Identify target institution's registry from ADR network.
-2. Query by keyword/date/document number.
-3. Include RIK agency document register where institution context requires it.
-4. Extract core metadata (registry number, dates, sender/recipient, subject).
-5. Return normalized records and links.
+3. For a fielded search, POST to `/<agency>/otsing`. Useful fields include `title`, `regDateBegin`, `regDateEnd`, repeated `documentTypes`, `party`, `senderRegNr`, `accessRestriction` (`Avalik` or `AK`), and `pageNumber`.
 
-## Human setup (when needed)
-- ADR pages are often UI-first. Walk the user through selecting the institution and entering filters, then ask for the resulting search URL or exported file and continue.
+The form requires at least one search field. Dates use the format shown by the selected agency form. Document-type numeric values differ by agency, so read them from that agency's `/otsing` HTML rather than copying values across organizations.
 
-## Quality checks
-- Keep original registry identifiers unchanged.
-- Separate incoming vs outgoing records where provided.
+## Return
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://adr.rik.ee/ (HTTP 200, text/html, file links detected: 0)
-- https://www.rik.ee/en/agency/document-register (HTTP 200, text/html;, file links detected: 0)
+- Result rows expose reference, registration date, title, document type, other parties, and a stable `/<agency>/dokument/<id>` detail link.
+- Preserve the agency, query fields, page, access status, source URL, and retrieval time.
+- Follow detail links for public attachments only when needed; restricted (`AK`) records may expose metadata without full text.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Quick search may cap output and ask for a narrower query; use fielded search for precision.
+- Page URLs after a POST rely on the search state held by the server. Preserve the original POST fields when paging.
+- The index includes historical organization names and aliases. Report the register label actually used.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the agency index to contain multiple `avalik dokumendiregister` links.
+- Require search results to contain the expected five table headings and at least one `/<agency>/dokument/<id>` link. Reject an empty form or homepage as data.

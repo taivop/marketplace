@@ -69,6 +69,12 @@ Live primary-URL audit: removed dead Competition Authority, Data Protection Insp
 
 Municipal interface audit: removed the obsolete Tartu WebAktid duplicate and replaced the Tartu document-register splash-page recipe with its actual searchable Lotus Notes view chooser and record-type contracts. Removed the Tartu open-data wrapper because the city page only forwards to the already tested national catalog.
 
+Ministry of Finance interface audit: removed procurement review and supervision procedure pages plus the incorrectly routed local-government benchmark wrapper. Rebuilt state ownership as a tested HTML-table contract for companies and foundations.
+
+RIK interface audit: removed the access-approved e-File statistics environment and authenticated/paid Land Register wrapper. Rebuilt the public marital-property aggregate statistics endpoint and ADR document-register form contracts with live checks.
+
+Transport Administration interface audit: removed fairway-dues and ship-registration guidance wrappers. Rebuilt maritime economy around the Tableau CSV export and State Port Register around its public settings, list, and detail APIs.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.
