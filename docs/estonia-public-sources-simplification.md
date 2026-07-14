@@ -67,6 +67,8 @@ Second interface wave: merged food and feed operator lookups into the tested JVI
 
 Live primary-URL audit: removed dead Competition Authority, Data Protection Inspectorate, and police-statistics routes; closed VOLIS; three Labour Inspectorate routes that redirect to its homepage; and policy/authenticated-service wrappers for migration, archives, prosecution statistics, e-ship, and succession records.
 
+Municipal interface audit: removed the obsolete Tartu WebAktid duplicate and replaced the Tartu document-register splash-page recipe with its actual searchable Lotus Notes view chooser and record-type contracts. Removed the Tartu open-data wrapper because the city page only forwards to the already tested national catalog.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

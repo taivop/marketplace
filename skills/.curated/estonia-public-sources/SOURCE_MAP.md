@@ -53,7 +53,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Maritime economy indicators and fairway dues | `sources/maritime-economy-statistics`, `sources/fairway-dues` |
 | Cyber incidents and digital government operations | `sources/cyber-incidents-cert-ee`, `sources/public-sector-it-systems-riha`, `sources/x-road-usage-statistics`, `sources/digital-government-studies` |
 | e-Residency operational dashboard metrics | `sources/e-residency-dashboard` |
-| Municipal operations (Tallinn/Tartu) | `sources/tallinn-open-data`, `sources/tallinn-legal-acts-register`, `sources/tallinn-council-documents`, `sources/tartu-open-data`, `sources/tartu-webaktid`, `sources/tartu-document-register` |
+| Municipal operations and datasets (Tallinn/Tartu) | `sources/tallinn-open-data`, `sources/tallinn-legal-acts-register`, `sources/tallinn-council-documents`, `sources/tartu-document-register`, `sources/open-data` |
 | Elections and political process outcomes | `sources/election-results-data` |
 | National Electoral Committee (VVK) decisions | `sources/election-results-data` |
 | Cultural heritage / monuments | `sources/cultural-heritage-register` |

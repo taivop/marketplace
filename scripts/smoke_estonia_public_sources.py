@@ -241,6 +241,17 @@ def tallinn() -> None:
     assert {"andurid_id", "name", "ts", "in", "out"} <= data[0].keys()
 
 
+def tartu_documents() -> None:
+    body, content_type = fetch(
+        "https://info.raad.tartu.ee/dhs.nsf/dokreg?readform"
+    )
+    text = body.decode("utf-8", "replace")
+    assert content_type == "text/html"
+    assert "<title>Dokumendiregister</title>" in text
+    for view in ("oigusaktid", "paevakorrad", "protokollid", "lepingud"):
+        assert f"/dhs.nsf/{view}?SearchView" in text
+
+
 def elections() -> None:
     body, content_type = fetch(
         "https://www.valimised.ee/sites/default/files/uploads/misc/"
@@ -286,6 +297,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "riigikogu-open-data": riigikogu,
     "statistics-api": statistics,
     "tallinn-open-data": tallinn,
+    "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,
     "transport-traffic-data": transport,
     "weather-data": weather,
