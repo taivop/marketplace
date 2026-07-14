@@ -8,7 +8,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 |---|---|
 | "official stats", "time series", "national indicators", macro/financial statistics | `sources/statistics-api`, `sources/bank-of-statistics`, `sources/open-data` |
 | Parliament votes, MPs, sittings, agendas, stenograms | `sources/riigikogu-open-data` |
-| Draft law lifecycle and ministry coordination | `sources/legislation-workflow-eis`, `sources/riigikogu-draft-laws`, `sources/riigiteataja-draft-acts` |
+| Draft law lifecycle, ministry coordination, and public consultations | `sources/legislation-workflow-eis`, `sources/riigikogu-draft-laws`, `sources/riigiteataja-draft-acts` |
 | Final laws and legal texts | `sources/legal-acts-data` |
 | President decisions and decrees | `sources/president-decisions-decrees` |
 | Cabinet/government meeting agendas | `sources/government-session-agendas` |
@@ -17,7 +17,6 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Estonia 2035 action plan updates | `sources/estonia-2035-action-plan` |
 | Registry of active strategic development documents | `sources/strategic-development-documents-registry` |
 | Lobbying transparency | `sources/lobby-meetings` |
-| Public consultations and participation windows | `sources/public-consultations-osale`, `sources/public-consultations-feed` |
 | Procurement/tenders/contracts | `sources/procurement-data` |
 | Procurement review disputes and supervisory actions | `sources/procurement-review`, `sources/procurement-state-supervision` |
 | Party finance and party membership | `sources/party-funding-data`, `sources/political-party-membership` |
@@ -75,8 +74,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Crime-policy statistical studies | `sources/crime-policy-statistics` |
 | Education registries and EHIS extracts | `sources/education-data` |
 | Research projects/publications/institutions (ETIS) | `sources/etis-research-information-system` |
-| Animal-keeper registration process | `sources/animal-keeper-registering` |
-| Food and plant supervision operations | `sources/food-supervision`, `sources/food-business-approvals`, `sources/plant-protection-supervision`, `sources/animal-disease-control` |
+| Registered and approved food or feed business operators | `sources/food-business-approvals` |
 | MFA development cooperation and humanitarian aid records | `sources/mfa-development-cooperation-aid` |
 | MFA sanctions implementation and sanctions backend endpoint | `sources/mfa-sanctions` |
 | Defence public-opinion surveys | `sources/defence-public-opinion-surveys` |

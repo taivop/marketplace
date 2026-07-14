@@ -61,10 +61,14 @@ The root skill, command wrapper, and README must not maintain separate source in
 - [ ] Add one content-level smoke check per source.
 - [ ] Remove any source that cannot pass the practical-access test.
 
+Audited and smoke-covered in the first endpoint wave: Statistics Estonia, Bank of Estonia, Riigi Teataja, Riigikogu, Business Register, public finance, tax/customs, weather, Elering, Peatus, geospatial services, Tallinn open data, election results, the national open-data RSS catalog, and MuIS.
+
+Second interface wave: merged food and feed operator lookups into the tested JVIS contract; merged OSALE consultation routing into EIS; removed duplicate OSALE RSS, PTA guidance, animal-keeper registration, and animal-disease guidance entries that do not independently retrieve records.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.
-- [ ] Run network smoke checks on a schedule rather than on every pull request.
+- [x] Run network smoke checks for audited sources on a schedule rather than on every pull request.
 - [ ] Test representative Codex and Claude queries for routing and retrieval success.
 - [ ] Remove failed recipes promptly instead of retaining deprecated placeholders.
 

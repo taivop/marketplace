@@ -30,7 +30,7 @@ description: Query the Riigikogu open data API for parliamentary votes, members,
 ## Access reality
 - Public access type: API or structured endpoint access.
 - Verified 2026-07-14 against OpenAPI version `2.21.8`.
-- The January 2025 plenary-agenda example returned HTTP 200 JSON with four top-level records.
+- The January 2025 plenary-agenda example returns `weekStartDate`, `weekEndDate`, `title`, and a non-empty `sittings` array.
 - The service may return HTTP 429 for rapid consecutive requests; query serially and back off before retrying.
 
 ## Request contract
@@ -50,5 +50,6 @@ description: Query the Riigikogu open data API for parliamentary votes, members,
 
 ## Verification hooks
 - Confirm `Content-Type: application/json` and parse the response before reporting success.
+- For the agenda example, require each sitting to contain `uuid`, `sittingDateTime`, and `agendaItems`.
 - Confirm returned dates overlap the requested window.
 - Treat HTTP 429 as rate limiting, not evidence that the endpoint is unavailable.

@@ -1,68 +1,40 @@
 ---
 name: transport-traffic-data
-description: Retrieve Estonian transport operations data from Transport Administration pages and national public transport APIs (Peatus GraphQL and related public endpoints).
+description: Query Estonia's Peatus GraphQL service for public transport stops and routes, plus official public transport notices and road-traffic publications.
 ---
 
-# Transport and Public Transit Data
+# Transport and Public Transit
 
-## Use when
-- You need transport operations data, especially public transit stops/routes and traffic context.
-- You need repeatable API-based extraction for national public transport routing data.
+## Access
 
-## Avoid when
-- You only need municipal-only transport portals.
+Public GraphQL POST endpoint and JSON notifications. No authentication.
 
-## Inputs
-- Geography and period.
-- Entity scope (`stops`, `routes`, `patterns`, `traffic context`).
+## Endpoints
 
-## Outputs
-- Structured transit/traffic dataset with source endpoint metadata.
+- GraphQL: https://api.peatus.ee/routing/v1/routers/estonia/index/graphql
+- Notifications: https://web.peatus.ee/admin/api/public/notifications
+- Road traffic publications: https://www.transpordiamet.ee/liiklussagedus
 
-## Access reality statement
-- Access type: `API` + `download files`/`UI copy-only`.
-- Verified on 2026-02-24.
-- Peatus GraphQL endpoint is queryable via POST JSON.
+## Retrieve
 
-## Primary endpoints
-- Peatus portal: https://www.peatus.ee/
-- Peatus GraphQL endpoint: https://api.peatus.ee/routing/v1/routers/estonia/index/graphql
-- Peatus public notifications API: https://web.peatus.ee/admin/api/public/notifications
-- Transport Administration main site: https://www.transpordiamet.ee/en
-- Traffic frequency page: https://www.transpordiamet.ee/liiklussagedus
+POST JSON with `Content-Type: application/json`:
 
-## Retrieval workflow (reproducible)
-1. For public transit entities, send POST requests to Peatus GraphQL endpoint.
-2. Start with schema sanity query (`{__typename}`), then run scoped queries (`stops`, `routes`, etc.).
-3. For operational notices, fetch JSON from notifications endpoint.
-4. For road traffic context, collect files or published tables from Transport Administration pages.
-5. Return parsed records with original query text and response timestamp.
+```json
+{"query":"{stops(name:\"Tallinn\"){name gtfsId lat lon}}"}
+```
 
-## Request/query contract
-- Peatus GraphQL requires:
-  - Method: `POST`
-  - Header: `Content-Type: application/json`
-  - Body: `{"query":"...GraphQL..."}`
-- GET on GraphQL endpoint can return server error; use POST.
-- Notifications endpoint returns JSON without authentication.
+Use `{"query":"{__typename}"}` as a schema sanity check. Scope stop/route queries to avoid very large responses. Fetch the notifications endpoint directly for current operational notices. Use Transport Administration files only when the question concerns road traffic rather than scheduled transit.
 
-## Output schema expectations
-- `source_system` (`peatus_graphql`, `peatus_notifications`, `transpordiamet`)
-- `query` (for GraphQL extractions)
-- `entity_type`
-- `gtfsId` (if present)
-- `name`
-- `lat`/`lon` (if present)
-- `mode` (if present)
-- `published_at` (for notifications)
-- `source_url`
+## Return
 
-## Limits and caveats
-- GraphQL schema can evolve; always include query used.
-- Some transport context pages are ET-only and UI-centric.
-- API responses can be large; paginate/scope queries where possible.
+Preserve the GraphQL query, `gtfsId`, name, coordinates, mode/route fields requested, errors, endpoint, and retrieval time. For notices preserve publication time, affected service/location, text, and source URL.
 
-## Verification hooks
-- POST `{"query":"{__typename}"}` returns `{"data":{"__typename":"QueryType"}}`.
-- Query `stops(name:"Tallinn"){name gtfsId lat lon}` returns structured stop records.
-- `https://web.peatus.ee/admin/api/public/notifications` returns `application/json`.
+## Limits
+
+- GET on the GraphQL endpoint can return a server error; use POST.
+- The schema can evolve; retain the exact query with the result.
+- Name searches can return multiple stops with the same display name.
+
+## Verify
+
+Require HTTP 200 JSON with no top-level GraphQL `errors`. The sanity query must return `data.__typename: QueryType`; the Tallinn sample must return at least one stop with `name`, `gtfsId`, numeric `lat`, and numeric `lon`.

@@ -1,62 +1,37 @@
 ---
 name: tax-customs-data
-description: Retrieve and use Estonian Tax and Customs Board public statistics and open-data files for tax and trade related analyses.
+description: Download Estonian Tax and Customs Board public tax-payment, turnover, employment, and related open-data files.
 ---
 
-# Estonia Tax and Customs Data
+# Tax and Customs Open Data
 
-## Use when
-- You need official tax/customs statistics from EMTA.
-- You need downloadable open files for reproducible analysis.
+## Access
 
-## Avoid when
-- You need confidential taxpayer-level data.
+Public large CSV downloads linked from the EMTA statistics page. No authentication.
 
-## Inputs
-- Indicator/topic and period.
+## Endpoints
 
-## Outputs
-- Downloaded file(s), cleaned dataset, and field mapping.
+- Index: https://www.emta.ee/en/business-client/statistics-and-open-data
+- Current file: https://ncfailid.emta.ee/s/e4DneiWeKFfje6d/download/tasutud_maksud_kaesolev_aasta_eng.csv
+- Historical file: https://ncfailid.emta.ee/s/K8snLYNdZnqJCRn/download/tasutud_maksud_varasemad_aastad_eng.csv
 
-## Primary endpoints
-- Statistics page: https://www.emta.ee/en/business-client/statistics-and-open-data
-- Example direct files:
-  - `https://ncfailid.emta.ee/s/e4DneiWeKFfje6d/download/tasutud_maksud_kaesolev_aasta_eng.csv`
-  - `https://ncfailid.emta.ee/s/K8snLYNdZnqJCRn/download/tasutud_maksud_varasemad_aastad_eng.csv`
+## Retrieve
 
-## Workflow
-1. Start from EMTA statistics page and pick current/prior period file.
-2. Download CSV/XLSX and verify delimiter/encoding.
-3. Normalize column names and date formats.
-4. Return cleaned table with explicit source URL.
+1. Use the current file for current-year quarterly updates and the historical file for earlier years.
+2. Stream the CSV to disk or a parser; the current file can exceed 60 MB.
+3. Parse as UTF-8 CSV with quoted English headers.
+4. Filter by registry code, year, quarter, county, or activity after parsing.
 
-## Human setup (when needed)
-- If a file is gated or moved, ask the user to open the EMTA page and share the latest direct link; then continue automatically.
+## Return
 
-## Quality checks
-- Check language-specific column names.
-- Verify whether figures are cumulative or period-specific.
+Preserve `Data date`, `Registry code`, `Name`, `Type`, `County`, `Activity`, `Year`, quarterly state taxes, labour taxes/payments, turnover, employee counts, direct file URL, and retrieval time. Keep blank future-quarter cells as missing values.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.emta.ee/en/business-client/statistics-and-open-data (HTTP 200, text/html;, file links detected: 5)
-- https://ncfailid.emta.ee/s/e4DneiWeKFfje6d/download/tasutud_maksud_kaesolev_aasta_eng.csv` (HTTP 200, text/csv;charset=UTF-8, file links detected: 0)
-- https://ncfailid.emta.ee/s/K8snLYNdZnqJCRn/download/tasutud_maksud_varasemad_aastad_eng.csv` (HTTP 200, text/csv;charset=UTF-8, file links detected: 0)
+## Limits
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- This is published taxpayer-level aggregate information, not confidential tax-return data.
+- A single entity can have multiple year rows; use both registry code and year as keys.
+- Direct download tokens can change; if one fails, refresh it from the official index rather than guessing a replacement.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Verify
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require HTTP 200 `text/csv`, a download filename, and a header containing `Data date`, `Registry code`, `Year`, and the quarterly tax fields. Verify at least one data row has a numeric registry code and parseable year.

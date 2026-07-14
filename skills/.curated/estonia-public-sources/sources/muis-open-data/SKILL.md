@@ -1,65 +1,45 @@
 ---
 name: muis-open-data
-description: Retrieve machine-readable MuIS museum/collection records from opendata.muis.ee RDF endpoints and related open-data resource paths.
+description: Retrieve MuIS museum objects and related collection entities as public CIDOC-CRM RDF/XML.
 ---
 
-# MuIS Open Data
+# MuIS RDF
 
-## Use when
-- You need machine-readable museum object, collection, place, event, thesaurus, or person-group records.
-- You need RDF-compatible cultural heritage operational data.
+## Access
 
-## Avoid when
-- You only need monument protection status (use cultural-heritage-register skill).
+Public RDF over HTTP at `https://opendata.muis.ee/`. No authentication. Request `Accept: application/rdf+xml`.
 
-## Inputs
-- Endpoint family (`object`, `media-list`, `collection`, `person-group`, `place`, `event`, `thesaurus`).
-- Entity id(s).
+## Retrieve
 
-## Outputs
-- RDF/XML records and parsed entity metadata with endpoint-level provenance.
+Known-valid object:
 
-## Access reality statement
-- Access type: `API` (RDF over HTTP).
-- Verified on 2026-02-24.
-- Endpoints are publicly reachable; content negotiation via `Accept: application/rdf+xml` is supported.
+```text
+GET https://opendata.muis.ee/object/1522095
+Accept: application/rdf+xml
+```
 
-## Primary endpoints
-- Open data docs page: https://opendata.muis.ee/
-- Example object endpoint: https://opendata.muis.ee/object/1
-- RDF schema: https://opendata.muis.ee/rdf-schema/muis.rdfs
-- Additional endpoint patterns listed on docs page (object, media-list, person-group, thesaurus, event, place, collection, objects-by-museum).
+Documented path families include:
 
-## Retrieval workflow (reproducible)
-1. Open `opendata.muis.ee` and select endpoint family + id.
-2. Request resource with `Accept: application/rdf+xml`.
-3. Store raw RDF response and parse key triples/fields required for task.
-4. For bulk transfer, use `accept-encoding: gzip` where supported.
-5. Return parsed entities with endpoint URL and retrieval timestamp.
+- `/object/{museum-object-id}`
+- `/media-list/{museum-object-id}`
+- `/person-group/{subject-id}`
+- `/thesaurus/{thesaurus-id}` and `/thesaurus/{thesaurus-id}/{term-id}`
+- `/event/{event-id}`
+- `/place/{place-id}`
+- collection, museum, and bulk object paths listed on the documentation page
 
-## Request/query contract
-- Method: `GET`.
-- Required parameter: path id in endpoint URL (e.g., `/object/{id}`).
-- Recommended header: `Accept: application/rdf+xml`.
-- Optional header for compressed downloads: `accept-encoding: gzip`.
-- Response body: RDF/XML content.
+Parse the RDF graph and follow linked resources only as needed. Use `Accept-Encoding: gzip` for documented bulk responses.
 
-## Output schema expectations
-- `endpoint_url`
-- `entity_type`
-- `entity_id`
-- `rdf_format`
-- `label_or_title`
-- `museum_or_collection_ref` (if present)
-- `time_or_period` (if present)
-- `raw_reference`
+## Return
 
-## Limits and caveats
-- Response `Content-Type` header may not always strictly advertise RDF even when RDF body is returned.
-- Some linked resources require follow-up requests for full context.
-- IDs are source-system identifiers and should not be re-coded.
+Keep endpoint URL, entity type/ID, RDF predicates and object values needed by the question, labels/titles, museum/collection links, dates/periods, linked media/resources, and retrieval time. Preserve source IDs and URIs.
 
-## Verification hooks
-- `https://opendata.muis.ee/object/1` is reachable.
-- `curl -H "Accept: application/rdf+xml" https://opendata.muis.ee/object/1522095` returns RDF body.
-- Docs page lists endpoint examples and gzip retrieval examples.
+## Limits
+
+- Not every numeric ID exists; `/object/1` currently returns 404.
+- Linked entities require additional requests for full context.
+- RDF schema is available at `https://opendata.muis.ee/rdf-schema/muis.rdfs` and may be served as `application/octet-stream` despite containing RDF/XML.
+
+## Verify
+
+Require HTTP 200, parseable XML, and RDF root `{http://www.w3.org/1999/02/22-rdf-syntax-ns#}RDF`. For the known object, require at least one RDF description/resource; a 404 or HTML body is not successful retrieval.

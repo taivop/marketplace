@@ -1,62 +1,37 @@
 ---
 name: energy-data
-description: Query Elering dashboard API for Estonia electricity and system data, including market and balance time series.
+description: Query Elering public dashboard APIs for Estonian electricity prices, production, consumption, forecasts, balances, and cross-border flows.
 ---
 
-# Estonia Energy Data (Elering)
+# Elering Energy Data
 
-## Use when
-- You need near-real-time electricity system and market series.
-- You need energy context for macro, climate, or operations analysis.
+## Access
 
-## Avoid when
-- You need only annual energy aggregates from statistical yearbooks.
+Public JSON GET endpoints at `https://dashboard.elering.ee/api/`. No authentication.
 
-## Inputs
-- Start/end timestamps (ISO UTC).
-- Data family (price, system balance, production/consumption).
+## Retrieve
 
-## Outputs
-- Time-series JSON extract with harmonized timestamps.
+Use ISO-8601 UTC timestamps. Known-valid examples:
 
-## Primary endpoints
-- Dashboard: https://dashboard.elering.ee/
-- NPS price API: `https://dashboard.elering.ee/api/nps/price?start=...&end=...`
-- System with plan API: `https://dashboard.elering.ee/api/system/with-plan?start=...&end=...`
+```text
+GET https://dashboard.elering.ee/api/nps/price?start=2026-07-01T00%3A00%3A00.000Z&end=2026-07-02T00%3A00%3A00.000Z
+GET https://dashboard.elering.ee/api/system/with-plan?start=2026-07-01T00%3A00%3A00.000Z&end=2026-07-02T00%3A00%3A00.000Z
+```
 
-## Workflow
-1. Choose relevant endpoint and set UTC time window.
-2. Fetch JSON and parse the `data` object by region/series.
-3. Convert timestamps consistently and document timezone handling.
-4. Return cleaned series and missing-data notes.
+For cross-border analysis also use `/api/transmission/cross-border` with the same `start` and `end` contract.
 
-## Human setup (when needed)
-- Usually none.
+Parse `data` by series. Price data has regional arrays (`ee`, `fi`, `lv`, `lt`) with `timestamp` and `price`. System data has `real` and `plan` arrays with fields such as `production`, `consumption`, `frequency`, `system_balance`, `ac_balance`, and renewable/solar values.
 
-## Quality checks
-- Validate interval consistency (e.g., 15-minute or hourly).
-- Flag daylight-saving boundaries and missing points.
+## Return
 
-## Access reality
-- Public access type: API or structured endpoint access.
-- Verification run: 2026-02-24.
-- https://dashboard.elering.ee/ (HTTP 200, text/html, file links detected: 0)
-- https://dashboard.elering.ee/api/nps/price?start=...&end=...` (HTTP 400, application/json, file links detected: 0)
-- https://dashboard.elering.ee/api/system/with-plan?start=...&end=...` (HTTP 400, application/json, file links detected: 0)
+Keep the endpoint, exact UTC window, series/region, Unix timestamp, original measurements, inferred interval, retrieval time, and missing-value flags. Convert timestamps only after preserving the originals.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Literal `...` placeholders are invalid and return 400.
+- Values and intervals can change at daylight-saving or market-resolution boundaries; infer cadence from returned timestamps.
+- Do not combine `real` and `plan` values without labeling them.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require HTTP 200 JSON, `success: true`, and non-empty arrays under the expected `data` keys. Check timestamps fall inside the requested window and required measurement fields are numeric or explicitly null.

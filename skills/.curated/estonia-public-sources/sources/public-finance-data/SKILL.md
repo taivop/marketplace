@@ -1,67 +1,41 @@
 ---
 name: public-finance-data
-description: Retrieve Estonian Ministry of Finance fiscal records (RES, annual budgets, liabilities, investor relations, payments, and consolidated accounting) from fin.ee pages, document tables, and embedded dashboards.
+description: Retrieve Estonian Ministry of Finance budget, strategy, liabilities, payments, and consolidated-accounting documents from fin.ee.
 ---
 
-# Estonia Public Finance Data (fin.ee)
+# Ministry of Finance Records
 
-## Use when
-- You need state budget strategy (RES), annual budget package records, debt/liability context, investor disclosures, payment dashboards, or consolidated state accounting reports.
-- You need reproducible Ministry of Finance source documents with publication dates.
+## Access
 
-## Avoid when
-- You need transaction-level tax administration data (use tax-specific sources).
+Public HTML document tables and direct PDF, DOCX, and XLSX downloads. No login. Use a normal user agent if the VPortal/Cloudflare edge returns 403 to a generic client.
 
-## Inputs
-- Topic scope: `res`, `annual-budget`, `liabilities`, `investor-relations`, `government-payments`, `consolidated-accounting`.
-- Year or year range.
+## Entry pages
 
-## Outputs
-- Source-linked extract of files/records and key fiscal metadata.
+- Annual budgets: https://www.fin.ee/riigi-rahandus-ja-maksud/riigieelarve-ja-eelarvestrateegia/riigieelarved
+- State budget strategy: https://www.fin.ee/riigi-rahandus-ja-maksud/riigieelarve-ja-eelarvestrateegia/riigi-eelarvestrateegia
+- Liabilities: https://www.fin.ee/riigi-rahandus-ja-maksud/riigikassa/riigi-finantskohustised
+- Investor relations: https://www.fin.ee/riigi-rahandus-ja-maksud/riigikassa/investorsuhted
+- Government payments: https://www.fin.ee/riigi-rahandus-ja-maksud/riigi-raamatupidamine/valitsussektori-maksed
+- Consolidated reports: https://www.fin.ee/riigi-rahandus-ja-maksud/riigi-raamatupidamine/riigi-raamatupidamise-koondaruanded
 
-## Access reality statement
-- Access type: `download files` + `UI copy-only` (embedded PowerBI/Tableau views).
-- Verified on 2026-02-24.
-- fin.ee document tables are exposed as HTML-embedded JSON blocks (`script type="application/json" id="datatable-..."`).
+## Retrieve
 
-## Primary endpoints
-- RES: https://www.fin.ee/riigi-rahandus-ja-maksud/riigieelarve-ja-eelarvestrateegia/riigi-eelarvestrateegia
-- Annual budget package: https://www.fin.ee/riigi-rahandus-ja-maksud/riigieelarve-ja-eelarvestrateegia/riigieelarved
-- State financial liabilities: https://www.fin.ee/riigi-rahandus-ja-maksud/riigikassa/riigi-finantskohustised
-- Treasury investor relations: https://www.fin.ee/riigi-rahandus-ja-maksud/riigikassa/investorsuhted
-- Government-sector payments: https://www.fin.ee/riigi-rahandus-ja-maksud/riigi-raamatupidamine/valitsussektori-maksed
-- Consolidated accounting reports: https://www.fin.ee/riigi-rahandus-ja-maksud/riigi-raamatupidamine/riigi-raamatupidamise-koondaruanded
+1. Fetch the narrowest entry page for the topic and year.
+2. Extract linked records from the HTML, including links inside `script type="application/json"` datatable blocks when present.
+3. Resolve `/sites/default/files/...` links against `https://www.fin.ee` and download the exact official file.
+4. Preserve the page label, publication date, file title, direct URL, and file type.
+5. Treat Power BI/Tableau sections as browser-only unless a documented download is exposed.
 
-## Retrieval workflow (reproducible)
-1. Open the target page and capture the retrieval timestamp.
-2. Extract the `datatable-...` JSON script block when present.
-3. Parse each row into: file/link title, publication date (`time datetime`), and download/view URL.
-4. Normalize relative file links (prefix with `https://www.fin.ee`).
-5. For dashboard-only sections (PowerBI/Tableau), store the exact embed URL and page name/tab information.
-6. Return a structured result with source URL, row-level evidence URL, and date fields.
+## Return
 
-## Request/query contract
-- No auth required for listed endpoints.
-- Table records are in page HTML under `script type="application/json" id="datatable-..."`.
-- Relative download links use `/sites/default/files/...` and must be expanded to absolute URLs.
-- Dashboard endpoints are embed URLs (PowerBI/Tableau) without stable public query parameter docs; treat as UI sources.
+Keep `topic`, `year`, `source_page_url`, `record_title`, `publication_date`, `record_type`, `download_or_view_url`, language, retrieval time, and the extracted fiscal fields with original units.
 
-## Output schema expectations
-- `topic`
-- `source_page_url`
-- `record_title`
-- `record_type` (`pdf`, `docx`, `xlsx`, `dashboard`, `external-link`)
-- `publication_date`
-- `download_or_view_url`
-- `language` (if inferable from title/page)
-- `notes`
+## Limits
 
-## Limits and caveats
-- fin.ee pages may mix historical and current records in one table; always preserve publication date.
-- Embedded dashboards may expose visuals but not bulk-download APIs.
-- Some sections include external platforms (PowerBI/Tableau) with separate availability/rate behavior.
+- Pages mix drafts, explanatory memoranda, approved laws, execution reports, and historical years; label document status explicitly.
+- Embedded dashboard visuals are not equivalent to a bulk-data API.
+- Do not rely on a hard-coded datatable ID; locate current datatable blocks or file anchors in the fetched page.
 
-## Verification hooks
-- RES page contains datatable id `datatable-4c339daab36efadd390fbb6908c78b5635eb583225568a6d442c092e63518767` and files such as `State budget strategy 2026–2029.docx`.
-- Consolidated reports page contains datatable id `datatable-97d8713fb37cf99b9a68b086553d26f8326da874bfde3a5778cb22808f71889d` and files such as `Riigi 2024. aasta majandusaasta koondaruanne`.
-- Government payments page includes a PowerBI embed URL at `app.powerbi.com/view?...`.
+## Verify
+
+Require the page to contain official `/sites/default/files/` links and the selected file to return the expected signature/content type. For an XLSX require ZIP magic bytes and a valid workbook; do not treat a rendered 404 HTML page as a document.

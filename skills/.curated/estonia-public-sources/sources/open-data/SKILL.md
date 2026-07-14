@@ -1,61 +1,33 @@
 ---
 name: open-data
-description: Discover and triage Estonian public datasets via andmed.eesti.ee; use for cross-agency dataset discovery, filtering, and routing to source-specific APIs/downloads.
+description: Discover Estonian public datasets through the national data portal RSS catalog when no source-specific recipe is known.
 ---
 
-# Estonia Open Data Discovery
+# National Open Data Discovery
 
-## Use when
-- You need the best dataset source for a topic across agencies.
-- You need to identify owner, refresh cadence, and access method.
+## Access
 
-## Avoid when
-- You already have a specific source API and dataset ID.
+Public RSS catalog at `https://andmed.eesti.ee/api/rss/feed`. The interactive portal may require a browser or normal user agent, but the RSS feed is directly machine-readable.
 
-## Inputs
-- Topic and policy/business question.
-- Preferred format (API, CSV, GeoJSON, etc.).
+## Retrieve
 
-## Outputs
-- Ranked shortlist of datasets.
-- Recommended primary dataset and fallback alternatives.
+1. Download and parse the RSS feed.
+2. Search item `title` and `description` using both Estonian and English terms.
+3. Use `link`/`guid` to open the matching dataset page, then capture publisher, update date, license, formats, and direct distributions.
+4. Prefer an existing source-specific recipe when the dataset points to a known API or registry.
 
-## Primary endpoints
-- Portal: https://andmed.eesti.ee/
-- RSS updates: https://andmed.eesti.ee/api/rss/feed
+RSS items contain `title`, `description`, `link`, `guid`, and `pubDate`. The feed contained 2,831 items in the 2026-07-14 verification run.
 
-## Workflow
-1. Search with both Estonian and English keywords.
-2. Collect metadata: owner, update date, coverage, format, license.
-3. Keep only machine-usable and recently updated datasets.
-4. Return shortlist with direct next step (API call or file download).
+## Return
 
-## Human setup (when needed)
-- If a dataset page requires browser interaction, walk the user through exact clicks and ask them to share the final direct file/API URL.
+Return a short ranked list with dataset title, owner, dataset-page URL, update date, description, license, format/access method, direct data URL, and recommended next recipe. Do not return the whole catalog.
 
-## Quality checks
-- Prefer official publishers and open licenses.
-- De-prioritize stale or undocumented datasets.
+## Limits
 
-## Access reality
-- Public access type: API or structured endpoint access.
-- Verification run: 2026-02-24.
-- https://andmed.eesti.ee/ (HTTP 200, text/html, file links detected: 0)
-- https://andmed.eesti.ee/api/rss/feed (HTTP 200, application/rss+xml;, file links detected: 0)
+- RSS describes dataset updates; it does not expose every portal facet or all distribution metadata.
+- A dataset page can describe a source without providing a working distribution. Verify the final API/file separately.
+- Use this only as fallback discovery, not as a substitute for a known acquisition recipe.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require HTTP 200 `application/rss+xml`, root `rss`, a `channel`, and non-empty `item` elements containing title, link, and publication date. Verify the selected dataset's final distribution before claiming data access.
