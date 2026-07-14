@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import ast
 from pathlib import Path
 import re
 import sys
@@ -21,6 +22,7 @@ def main() -> int:
     package = root / "skills" / ".curated" / "estonia-public-sources"
     source_root = package / "sources"
     map_path = package / "SOURCE_MAP.md"
+    smoke_path = root / "scripts" / "smoke_estonia_public_sources.py"
     errors: list[str] = []
 
     if not map_path.is_file():
@@ -36,6 +38,32 @@ def main() -> int:
         errors.append(f"catalog references missing recipe: sources/{missing}")
     for unlisted in sorted(recipe_sources - catalog_sources):
         errors.append(f"source recipe is absent from SOURCE_MAP.md: sources/{unlisted}")
+
+    if not smoke_path.is_file():
+        errors.append(f"missing source smoke checks: {smoke_path}")
+        smoke_sources: set[str] = set()
+    else:
+        smoke_tree = ast.parse(smoke_path.read_text(encoding="utf-8"))
+        smoke_sources = set()
+        for node in smoke_tree.body:
+            if not isinstance(node, ast.AnnAssign):
+                continue
+            if not isinstance(node.target, ast.Name) or node.target.id != "CHECKS":
+                continue
+            if isinstance(node.value, ast.Dict):
+                smoke_sources = {
+                    key.value
+                    for key in node.value.keys
+                    if isinstance(key, ast.Constant) and isinstance(key.value, str)
+                }
+            break
+        if not smoke_sources:
+            errors.append(f"could not read CHECKS mapping: {smoke_path}")
+
+    for missing in sorted(recipe_sources - smoke_sources):
+        errors.append(f"source recipe has no smoke check: sources/{missing}")
+    for stale in sorted(smoke_sources - recipe_sources):
+        errors.append(f"smoke check has no source recipe: sources/{stale}")
 
     for path in source_paths:
         try:

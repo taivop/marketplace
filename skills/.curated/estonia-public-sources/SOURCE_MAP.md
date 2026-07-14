@@ -51,7 +51,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Maritime economy indicators | `sources/maritime-economy-statistics` |
 | Cyber incidents and digital government operations | `sources/cyber-incidents-cert-ee`, `sources/public-sector-it-systems-riha`, `sources/x-road-usage-statistics`, `sources/digital-government-studies` |
 | e-Residency operational dashboard metrics | `sources/e-residency-dashboard` |
-| Municipal operations and datasets (Tallinn/Tartu) | `sources/tallinn-open-data`, `sources/tallinn-legal-acts-register`, `sources/tallinn-council-documents`, `sources/tartu-document-register`, `sources/open-data` |
+| Municipal operations and datasets (Tallinn/Tartu) | `sources/tallinn-open-data`, `sources/tallinn-council-documents`, `sources/tartu-document-register`, `sources/open-data` |
 | Elections and political process outcomes | `sources/election-results-data` |
 | National Electoral Committee (VVK) decisions | `sources/election-results-data` |
 | Cultural heritage / monuments | `sources/cultural-heritage-register` |
@@ -69,8 +69,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Registered and approved food or feed business operators | `sources/food-business-approvals` |
 | MFA development cooperation and humanitarian aid records | `sources/mfa-development-cooperation-aid` |
 | Estonia-specific sanctions regulations and MFA subject-list links | `sources/mfa-sanctions` |
-| Defence public-opinion surveys | `sources/defence-public-opinion-surveys` |
-| Defence policy/legal baseline and defence budget documents | `sources/defence-policy-budget-documents` |
+| Defence policy, budget, programme, and public-opinion documents | `sources/defence-policy-budget-documents` |
 | Tourism information system dataset (andmed.eesti.ee) | `sources/tourism-information-system-dataset` |
 
 ## Routing notes

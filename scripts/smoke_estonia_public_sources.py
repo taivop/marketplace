@@ -259,6 +259,153 @@ def business_register() -> None:
     assert body == b"PK\x03\x04"
 
 
+def defence_documents() -> None:
+    budget_url = (
+        "https://kaitseministeerium.ee/poliitikad-ja-planeerimine/"
+        "kaitsevoime-areng/kaitse-eelarve"
+    )
+    budget, budget_type = fetch(budget_url)
+    budget_text = unescape(budget.decode("utf-8", "replace"))
+    assert budget_type == "text/html"
+    assert re.search(r"Kaitse-eelarve 20\d{2}", budget_text)
+    assert "Viimati uuendatud" in budget_text
+
+    policy_url = (
+        "https://kaitseministeerium.ee/poliitikad-ja-planeerimine/"
+        "poliitikad/alusdokumendid-ja-oigusaktid"
+    )
+    policy, policy_type = fetch(policy_url)
+    policy_text = unescape(policy.decode("utf-8", "replace"))
+    policy_pdfs = re.findall(r'href="([^"]+\.pdf[^"]*)"', policy_text, re.I)
+    assert policy_type == "text/html" and len(policy_pdfs) >= 6
+    assert policy_text.count("riigiteataja.ee") >= 5
+
+    surveys_url = "https://www.kaitseministeerium.ee/trukised-uuringud"
+    surveys, surveys_type = fetch(surveys_url)
+    surveys_text = unescape(surveys.decode("utf-8", "replace"))
+    survey_pdfs = re.findall(r'href="([^"]+\.pdf[^"]*)"', surveys_text, re.I)
+    assert surveys_type == "text/html" and len(survey_pdfs) >= 40
+    assert "Avaliku arvamuse uuringud" in surveys_text
+    pdf, pdf_type = fetch(urljoin(surveys_url, survey_pdfs[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def e_residency() -> None:
+    body, content_type = fetch("https://www.e-resident.gov.ee/dashboard/")
+    text = body.decode("utf-8", "replace")
+    chunks = []
+    for raw in re.findall(
+        r"self\.__next_f\.push\((\[.*?\])\)</script>",
+        text,
+        re.DOTALL,
+    ):
+        value = json.loads(raw)
+        if len(value) > 1 and isinstance(value[1], str):
+            chunks.append(value[1])
+    assert content_type == "text/html" and chunks
+
+    groups = {}
+    for key in (
+        "top-figures",
+        "top-countries-by-number-of-applications-in-the-last-12-months",
+        "top-countries-by-number-of-e-residents",
+    ):
+        marker = f'"{key}":'
+        for chunk in chunks:
+            position = chunk.find(marker)
+            if position >= 0:
+                groups[key], _ = json.JSONDecoder().raw_decode(
+                    chunk,
+                    position + len(marker),
+                )
+                break
+    assert len(groups.get("top-figures", [])) == 5
+    assert {"names", "values"} <= groups["top-figures"][0].keys()
+    for key in groups.keys() - {"top-figures"}:
+        assert groups[key]
+        assert {"citizenship", "code", "value"} <= groups[key][0].keys()
+
+
+def kapo_reviews() -> None:
+    pdf, content_type = fetch(
+        "https://kapo.ee/sites/default/files/content_page_attachments/"
+        "aastaraamat-2025-2026.pdf",
+        limit=5,
+    )
+    assert content_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def rescue_incidents() -> None:
+    page_url = "https://www.rescue.ee/et/paeaestesuendmuste-statistika"
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    workbooks = re.findall(r'href="([^"]+\.xlsx[^"]*)"', text, re.I)
+    assert content_type == "text/html" and len(workbooks) >= 14
+    workbook, workbook_type = fetch(urljoin(page_url, workbooks[-1]), limit=4)
+    assert workbook_type == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert workbook == b"PK\x03\x04"
+
+    csv_body, csv_type = fetch(
+        "https://opendata.smit.ee/paa/csv/"
+        "metsa_ja_maastikutulekahjud_jooksev_aasta.csv",
+        limit=5_000,
+    )
+    rows = csv_body.decode("utf-8-sig").splitlines()
+    assert csv_type == "application/octet-stream" and len(rows) >= 2
+    assert rows[0].startswith('"sundmuse_number"\t"sundmuse_kuupaev_dt"')
+
+
+def tallinn_documents() -> None:
+    settings = fetch_json("https://teele.tallinn.ee/api/systemSettings")
+    assert isinstance(settings, list)
+    setting_values = {item["key"]: item["value"] for item in settings}
+    council_unit = setting_values.get("COUNCILUNIT")
+    assert council_unit and council_unit.isdigit()
+
+    common = [
+        ("documentTypes", "RESOLUTION"),
+        ("documentTypes", "REGULATION"),
+        ("publisherUnitId", council_unit),
+        ("page", "1"),
+        ("pageSize", "5"),
+        ("lang", "EE"),
+    ]
+    acts_query = common + [
+        ("status", "ACCEPTED"),
+        ("sortColumn", "publishedAt"),
+        ("sortDirection", "desc"),
+    ]
+    acts = fetch_json(
+        "https://teele.tallinn.ee/api/documents?" + urlencode(acts_query)
+    )
+    assert isinstance(acts, dict) and acts.get("results")
+    assert {"page", "pageCount", "rowCount", "results"} <= acts.keys()
+    act = acts["results"][0]
+    assert {"id", "title", "documentType", "status", "publishedAt"} <= act.keys()
+    assert act.get("publisherUnit", {}).get("id") == int(council_unit)
+
+    detail = fetch_json(f"https://teele.tallinn.ee/api/documents/{act['id']}?lang=EE")
+    assert isinstance(detail, dict) and detail.get("id") == act["id"]
+    assert {"hasAccess", "hasAccessRestriction", "documentSubmission"} <= detail.keys()
+
+    drafts_query = common + [
+        ("statuses", "INCOUNCILPROCEEDING"),
+        ("statuses", "WAITINGFORCOUNCILMEETING"),
+        ("sortColumn", "documentSubmission.acceptedAt"),
+        ("sortDirection", "asc"),
+    ]
+    drafts = fetch_json(
+        "https://teele.tallinn.ee/api/documents?" + urlencode(drafts_query)
+    )
+    assert isinstance(drafts, dict) and drafts.get("results")
+    assert drafts["results"][0]["status"] in {
+        "Linnavolikogu menetluses",
+        "Linnavolikogu istungi ootel",
+    }
+
+
 def procurement() -> None:
     base = "https://riigihanked.riik.ee/rhr/api/public/v1/opendata"
     expected = {
@@ -1744,11 +1891,13 @@ CHECKS: dict[str, Callable[[], None]] = {
     "court-system-statistics": court_statistics,
     "crime-policy-statistics": crime_policy,
     "cyber-incidents-cert-ee": cyber_incidents,
+    "defence-policy-budget-documents": defence_documents,
     "digital-government-studies": ria_studies,
     "election-results-data": elections,
     "energy-data": energy,
     "economic-activities-register-mtr": economic_activities,
     "education-data": education_data,
+    "e-residency-dashboard": e_residency,
     "eu-funded-projects": eu_funded_projects,
     "environmental-charge-statistics": environmental_charges,
     "environmental-permit-decisions": environmental_permits,
@@ -1765,6 +1914,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "health-statistics": health_statistics,
     "health-welfare-open-data": tehik_covid_open_data,
     "healthcare-professionals-register": healthcare_professionals,
+    "internal-security-annual-reviews": kapo_reviews,
     "legal-acts-data": legal_acts,
     "legislation-workflow-eis": legislation_workflow,
     "lobby-meetings": lobby_meetings,
@@ -1793,6 +1943,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "public-sector-it-systems-riha": riha,
     "riigikogu-open-data": riigikogu,
     "riigiteataja-draft-acts": draft_acts,
+    "rescue-incident-data": rescue_incidents,
     "social-insurance-statistics": social_insurance_statistics,
     "statistics-api": statistics,
     "strategic-development-documents-registry": strategic_documents,
@@ -1801,6 +1952,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "state-assets-register": state_assets,
     "state-port-register": state_ports,
     "supreme-court-judgments": supreme_court,
+    "tallinn-council-documents": tallinn_documents,
     "tallinn-open-data": tallinn,
     "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,

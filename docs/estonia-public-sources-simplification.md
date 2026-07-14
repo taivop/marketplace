@@ -49,17 +49,17 @@ The root skill, command wrapper, and README must not maintain separate source in
 
 - [x] Remove the clearest narrative, registration, and access-controlled non-sources.
 - [x] Merge Riigikogu agenda and stenogram routing into the Riigikogu API recipe.
-- [ ] Group remaining entries by underlying technical interface.
-- [ ] Merge duplicate wrappers that use the same API, dataset, or public application.
-- [ ] Delete entries that cannot retrieve public records in a clean agent session.
+- [x] Group remaining entries by underlying technical interface.
+- [x] Merge duplicate wrappers that use the same API, dataset, or public application.
+- [x] Delete entries that cannot retrieve public records in a clean agent session.
 
 ### Phase 3: Verify every surviving recipe
 
-- [ ] Run every working request or browser path.
-- [ ] Replace homepage-only endpoints and placeholder requests.
-- [ ] Replace generic generated sections with exact request and response contracts.
-- [ ] Add one content-level smoke check per source.
-- [ ] Remove any source that cannot pass the practical-access test.
+- [x] Run every working request or browser path.
+- [x] Replace homepage-only endpoints and placeholder requests.
+- [x] Replace generic generated sections with exact request and response contracts.
+- [x] Add one content-level smoke check per source.
+- [x] Remove any source that cannot pass the practical-access test.
 
 Audited and smoke-covered in the first endpoint wave: Statistics Estonia, Bank of Estonia, Riigi Teataja, Riigikogu, Business Register, public finance, tax/customs, weather, Elering, Peatus, geospatial services, Tallinn open data, election results, the national open-data RSS catalog, and MuIS.
 
@@ -99,12 +99,14 @@ Education, research, and medicines audit: reduced education data to the three di
 
 Procurement, assets, tax, and tourism audit: replaced four generic UI recipes with the procurement register's monthly notice XML, RKVR's seven nightly XML extracts and XSD, EMTA's session-and-CSRF public inquiry forms, and the tourism catalog's canonical XLSX distribution API. Removed the eesti.ee state-services wrapper because its client-only navigation page did not provide the promised public service records or a verified catalog interface.
 
+Final interface audit: merged the defence survey wrapper into one current Ministry of Defence document index after removing its dead routes. Rebuilt e-Residency around its parseable React Flight payload, narrowed Rescue Board incidents to the available XLSX and fire CSV coverage, retained KAPO with an explicit browser-index/direct-PDF split, and rebuilt Tallinn council acts and drafts around the TEELE JSON API. Removed the broken Tallinn legal-acts wrapper because its records are available through TEELE and its old site returns a database error.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.
 - [x] Run network smoke checks for audited sources on a schedule rather than on every pull request.
-- [ ] Test representative Codex and Claude queries for routing and retrieval success.
-- [ ] Remove failed recipes promptly instead of retaining deprecated placeholders.
+- [x] Test representative Codex and Claude queries for routing and retrieval success.
+- [x] Remove failed recipes promptly instead of retaining deprecated placeholders.
 
 ## Acceptance criteria
 

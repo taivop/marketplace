@@ -1,57 +1,28 @@
 ---
 name: rescue-incident-data
-description: Query Rescue Board statistics pages for emergency incidents, response activity, and operational risk context.
+description: Download Rescue Board historical incident workbooks and current forest and landscape fire incident CSV records.
 ---
 
 # Rescue Incident Data
 
-## Use when
-- You need incident/response statistics from Rescue Board publications.
-- You need operational emergency trend context.
+Use this source for Rescue Board incident counts through 2020 and row-level forest or landscape fire incidents from 2014 onward. It is not a current row-level feed of every rescue incident type.
 
-## Avoid when
-- You need police criminal-case data.
+## Endpoints
 
-## Inputs
-- Incident type, region, and time window.
-
-## Outputs
-- Incident-response statistics dataset and summary indicators.
-
-## Primary endpoints
-- Rescue Board statistics: https://www.rescue.ee/et/statistika
+- Historical incident workbooks: `https://www.rescue.ee/et/paeaestesuendmuste-statistika`
+- Current-year forest/landscape fires: `https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_jooksev_aasta.csv`
+- 2014-2025 forest/landscape fires: `https://opendata.smit.ee/paa/csv/metsa_ja_maastikutulekahjud_2014_kuni_2025.csv`
+- Other Rescue Board open-data indexes: `https://www.rescue.ee/et/juhend/avaandmed`
 
 ## Workflow
-1. Locate relevant incident statistics publication/dashboard.
-2. Extract period, region, and incident-type metrics.
-3. Normalize category labels for consistent comparison.
-4. Return trend-ready table with source annotations.
 
-## Human setup (when needed)
-- If data is chart-only or embedded in downloadable reports, guide user through export/copy steps and continue from provided files.
+1. For counts by incident type and county or month, discover the XLSX links on the historical page. It supplies 2010-2014 aggregates and annual files for 2015-2020.
+2. For current row-level forest/landscape fires, download both CSV periods when the requested range crosses 2025/2026.
+3. Parse the fire CSV as UTF-8, tab-delimited data despite its `application/octet-stream` content type.
+4. Preserve `sundmuse_number`, incident date/type, county/municipality, coordinates, dispatch/arrival/localization timestamps, resource counts, and burned area where present.
+5. Keep category definitions, source URL, covered period, and retrieval time. Do not mix incident counts with response times or burned area.
 
-## Quality checks
-- Keep incident-category definitions with extracted values.
-- Separate incident counts from response-time metrics.
+## Verification
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.rescue.ee/et/statistika (HTTP 200, text/html, file links detected: 1)
-
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
-
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Historical downloads are valid XLSX files beginning `PK\x03\x04`.
+- The current CSV header begins with `sundmuse_number` and `sundmuse_kuupaev_dt` and is followed by incident rows.

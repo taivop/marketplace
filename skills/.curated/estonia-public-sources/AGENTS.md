@@ -20,26 +20,17 @@ Exclude by default:
 4. Very narrow one-off topics with low expected reuse.
 5. Pages that only describe a system but do not provide practical public data access.
 
-## Mandatory SKILL.md Quality Standard
+## Recipe Standard
 
-Every `sources/<slug>/SKILL.md` must contain enough detail for a fresh agent to actually retrieve data, not just describe it.
+Every `sources/<slug>/SKILL.md` must give a fresh agent the shortest reliable path to a real public record. Include only what changes retrieval:
 
-Required minimum content:
+1. Exact API, download, or public browser endpoint.
+2. Required parameters, headers, session steps, or UI inputs.
+3. Expected response type and identifying fields.
+4. Source-specific coverage, access, pagination, or interpretation limits.
+5. A semantic check in `scripts/smoke_estonia_public_sources.py` that proves useful records were returned.
 
-1. **Access reality statement**
-   - Explicitly state whether access is `API`, `download files`, `UI export`, `UI copy-only`, or `no public machine-readable data`.
-2. **Primary endpoints**
-   - Include concrete, currently reachable URLs (not just homepages).
-3. **Retrieval workflow with reproducible steps**
-   - Step-by-step actions including filters/inputs needed to obtain records.
-4. **Request/query contract (when applicable)**
-   - Required parameters, accepted values, required headers, auth/session constraints, and expected response format.
-5. **Output schema expectations**
-   - List key fields the extractor should return (with exact source naming when possible).
-6. **Limits and caveats**
-   - Language constraints, anti-bot/session behavior, pagination, stale coverage windows, and auth boundaries.
-7. **Verification hooks**
-   - At least one concrete check (example file name, response type, update date field, record count sanity check, etc.).
+Do not add generic Inputs, Outputs, Access Reality, or Human Setup sections merely to make a recipe look complete. Merge recipes that share an interface when one focused recipe can route both topics.
 
 ## Removal / Rejection Rule
 

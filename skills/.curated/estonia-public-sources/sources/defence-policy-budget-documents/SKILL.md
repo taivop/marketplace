@@ -1,60 +1,30 @@
 ---
 name: defence-policy-budget-documents
-description: Retrieve Ministry of Defence policy/budget baseline documents, programmes, and legal-base references from official document pages.
+description: Retrieve current Estonian defence budget figures, policy documents, programme reports, and public-opinion survey PDFs from the Ministry of Defence.
 ---
 
-# Defence Policy and Budget Documents
+# Defence Budget, Policy, and Surveys
 
-## Use when
-- You need defence budget policy context and baseline policy/legal documents.
-- You need official programme and development-document PDFs from MoD pages.
+Use this source for Ministry of Defence budget figures, policy/legal baselines, defence programmes, result reports, and public-opinion-on-defence surveys. Use `procurement-data` for individual tenders or contracts.
 
-## Avoid when
-- You need procurement contract-level records (use procurement sources).
+## Index pages
 
-## Inputs
-- Topic (`budget`, `policy-base`, `programme`, `result-report`).
-- Year range.
+- Current defence budget: `https://kaitseministeerium.ee/poliitikad-ja-planeerimine/kaitsevoime-areng/kaitse-eelarve`
+- Policy documents and legal acts: `https://kaitseministeerium.ee/poliitikad-ja-planeerimine/poliitikad/alusdokumendid-ja-oigusaktid`
+- Public-opinion surveys: `https://www.kaitseministeerium.ee/trukised-uuringud`
 
-## Outputs
-- Structured document inventory with publication dates and links.
+## Workflow
 
-## Access reality statement
-- Access type: `download files` + `UI copy-only`.
-- Verified on 2026-02-24.
-- Pages publish direct PDF links and legal references (including Riigi Teataja links).
+1. For current budget totals and percentages, parse the budget page's headings and surrounding HTML text; cite the page and its `Viimati uuendatud` date.
+2. For policy and programme documents, collect PDF and Riigi Teataja links from the policy page. Preserve each anchor label because it contains the document title, period, size, and format.
+3. For surveys, collect the PDF links under `Avaliku arvamuse uuringud` on the publications page. The link labels give the survey month/year and file size; the archive runs from 2001 onward.
+4. Download only the required PDFs and preserve the report's question wording, sample, fieldwork period, and methodology when comparing indicators over time.
+5. Record index URL, direct document URL, label/date, and retrieval time.
 
-## Primary endpoints
-- Defence budget page: https://www.kaitseministeerium.ee/et/eesmargid-tegevused/kaitse-eelarve
-- Policy/legal base page: https://www.kaitseministeerium.ee/et/eesmargid-tegevused/alusdokumendid-ja-oigusaktid
+Do not reuse the obsolete `/et/eesmargid-tegevused/...` routes. Flag links on the `prelive.vportal.ee` host as legacy rather than treating them as current canonical files.
 
-## Retrieval workflow (reproducible)
-1. Open policy/legal base page and collect linked development documents and legal references.
-2. Open defence budget page and collect budget/programme related links.
-3. Normalize all relative file links (`/sites/default/files/...`) to absolute URLs.
-4. Classify records by type: policy baseline, programme, result report, legal basis.
-5. Return records with source page URL and publication/date hints from filename/context.
+## Verification
 
-## Request/query contract
-- No auth required.
-- Link-based extraction from page HTML.
-- Mixed link types: downloadable files and external legal references.
-
-## Output schema expectations
-- `source_page_url`
-- `document_title`
-- `document_url`
-- `document_type`
-- `publication_year_or_date`
-- `legal_reference` (boolean)
-- `notes`
-
-## Limits and caveats
-- Some links are historical and may route to archived structures.
-- Titles are often Estonian and can include long policy naming.
-- Budget context may be distributed across multiple ministry pages.
-
-## Verification hooks
-- Policy/legal page includes files such as `eesti_julgeolekupoliitika_alused_est_22.02.pdf` and `rkak_2017_2026_avalik_osa.pdf`.
-- Policy/legal page includes Riigi Teataja legal links.
-- Page includes result reports under `Julgeolek ja riigikaitse` section.
+- The budget page contains a current `Kaitse-eelarve {year}` heading.
+- The policy page exposes multiple official PDFs and Riigi Teataja links.
+- The publications page exposes many dated opinion-survey PDFs; valid files start with `%PDF-`.
