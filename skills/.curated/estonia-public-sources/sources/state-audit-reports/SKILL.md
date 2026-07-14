@@ -1,57 +1,34 @@
 ---
 name: state-audit-reports
-description: Query National Audit Office publications and audits to extract findings on public-sector performance and governance operations.
+description: Retrieve National Audit Office audit records, topics, dates, findings, recommendations, responses, and linked report files.
 ---
 
 # State Audit Reports
 
-## Use when
-- You need independent audit findings about government operations.
-- You need audit-level evidence for policy/governance analysis.
+## Access
 
-## Avoid when
-- You need primary operational logs rather than audit conclusions.
+- English audit index: `https://www.riigikontroll.ee/en/audits`
+- Estonian audit index: `https://www.riigikontroll.ee/auditid`
+- Public server-rendered HTML and files; no login is required.
 
-## Inputs
-- Audit topic, institution, period, and type.
+## Retrieve
 
-## Outputs
-- Audit list with findings metadata and links.
+Parse records only from the index's audit result list. Each card links to an audit detail page and includes report type, topic tags, title, teaser, and date. Use `?page=N` for later result pages and the visible facets for report type/topic selection.
 
-## Primary endpoint
-- Audit list: https://www.riigikontroll.ee/en/audits
+On the detail page, extract title, teaser, report type, topic tags, publication information, body findings, recommendations, audited institutions' responses, and links under the report/sidebar fields. Resolve `/sites/default/files/...` links against the host and verify each file type before parsing.
 
-## Workflow
-1. Filter audits by topic/type/date.
-2. Extract title, institution, publication date, and report link.
-3. Capture key findings/recommendations if needed.
-4. Return structured audit evidence table.
+## Return
 
-## Human setup (when needed)
-- If report documents require manual download, guide user through retrieval and continue from files.
+- Preserve title, report type, topics, publication date, teaser, detail URL, report/summary file URLs, audited institutions, findings, recommendations, responses, page/query, and retrieval time.
+- Keep the National Audit Office's finding, recommendation, and the audited body's response as separate attributed fields.
 
-## Quality checks
-- Separate audit reports from press/news items.
-- Keep publication date and audit type fields explicit.
+## Limits
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.riigikontroll.ee/en/audits (HTTP 200, text/html;, file links detected: 1)
+- The index mixes audit reports, annual reports to Parliament, consolidated-account evaluations, and other report types. Retain the type.
+- Some English pages provide only a summary file while the complete report is available in Estonian.
+- Search result ordering and facet URLs can change; do not infer completeness from the first page.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the index to contain multiple `node--type-auditid` result cards with type, title, date, and detail links.
+- Require a selected detail to expose its report type and at least one substantive body field or linked PDF; verify PDF signatures before extraction.

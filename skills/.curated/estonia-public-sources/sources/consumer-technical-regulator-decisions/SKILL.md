@@ -1,58 +1,40 @@
 ---
 name: consumer-technical-regulator-decisions
-description: Query Consumer Protection and Technical Regulatory Authority public materials for supervision and enforcement decision context.
+description: Query TTJA's public JSON register of Consumer Disputes Committee decisions and download the decision PDFs.
 ---
 
-# Consumer/Technical Regulator Decisions
+# Consumer Disputes Committee Decisions
 
-## Use when
-- You need TTJA supervision/enforcement publication context.
-- You need sector-regulation operational outcome references.
+## Access
 
-## Avoid when
-- You need unrelated market stats without regulatory context.
+- Register UI and JSON endpoint: `https://jvis.ttja.ee/modules/tarbijavaidluskomisjoni-otsused/avalik`
+- Public access; no login is required.
 
-## Inputs
-- Sector/topic, entity, and date range.
+## Retrieve
 
-## Outputs
-- Decision-related publication references and metadata.
+Send a GET request to the register with `_wbbdl=1`, `X-Requested-With: XMLHttpRequest`, and `Accept: application/json`. Optional query fields are:
 
-## Primary endpoints
-- Consumer disputes decisions: https://jvis.ttja.ee/modules/tarbijavaidluskomisjoni-otsused/avalik
-- TTJA homepage: https://ttja.ee/en
+- `search[company]`
+- `search[published_date][from]` and `search[published_date][to]`
+- `search[document_nr]`
+- `search[decision]`: `for_customer` or `for_seller`
+- `search[full_search]`
+- `search[group_search]`
 
-## Workflow
-1. Identify decision/enforcement-related sections.
-2. Extract relevant entries and links.
-3. Normalize topic/date/entity fields.
-4. Return structured regulatory-context table.
+The JSON response contains `result`, `total`, and `items`. Each item includes `id`, `company`, `publishing_date`, `document_nr`, `decision`, `committee`, `summary`, and `public_pdf_id`. Download the decision from `/modules/media/media/download/{public_pdf_id}`.
 
-## Human setup (when needed)
-- If direct scraping is blocked by site structure, guide user through browsing/filtering and continue from provided links/files.
+## Return
 
-## Quality checks
-- Label items by type (decision, warning, guidance, news).
-- Keep source links and publication dates exact.
+- Preserve trader, publication date, decision number/outcome, committee, summary, PDF URL, query, total, and retrieval time.
+- Treat the summary as an index description; use the PDF for the full reasoning.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://ttja.ee/en (HTTP 200, text/html;, file links detected: 1)
+## Limits
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- The endpoint returns 10 items by default. Narrow searches are reliable; no documented bulk pagination contract is published.
+- JSON rows and PDFs can contain names of consumers and committee members. Return personal data only when necessary for the request.
+- This register covers Consumer Disputes Committee decisions, not all TTJA supervision or enforcement actions.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Verify
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 JSON with `result=success`, positive `total`, and nonempty `items` for a focused company query.
+- Require decision fields and confirm the first `public_pdf_id` URL returns a PDF beginning with `%PDF-`.

@@ -1,57 +1,34 @@
 ---
 name: ombudsman-opinions
-description: Query Chancellor of Justice annual reports and opinion materials for constitutional and rights oversight context in Estonia.
+description: Retrieve Chancellor of Justice annual-review sites and historical annual-report PDFs from the official year index.
 ---
 
-# Ombudsman Opinions and Reports
+# Chancellor of Justice Annual Reports
 
-## Use when
-- You need oversight/rights interpretation context from the Chancellor of Justice.
-- You need annual reports and initiative outputs.
+## Access
 
-## Avoid when
-- You need court judgments rather than ombudsman materials.
+- English index: `https://www.oiguskantsler.ee/en/opinions-and-initiatives/annual-reports`
+- Recent report sites: `https://www.oiguskantsler.ee/annual-report-{year}/`
+- Public HTML and PDFs; no login is required.
 
-## Inputs
-- Topic keywords, rights area, and period.
+## Retrieve
 
-## Outputs
-- Report/opinion references with metadata and links.
+Parse the annual-report cards from the index. Recent years link to standalone report sites; older years link directly to PDFs. On a recent report site, follow topic/chapter navigation for HTML or fetch `overview.pdf` for the complete report snapshot.
 
-## Primary endpoint
-- Annual reports: https://www.oiguskantsler.ee/en/opinions-and-initiatives/annual-reports
+Use the site's `?q=` search only within the selected annual report. For individual current opinions and initiatives, use the site's separate search rather than treating annual-report chapters as case-level opinion records.
 
-## Workflow
-1. Collect report/opinion entries by period and topic.
-2. Extract publication metadata and links.
-3. Summarize relevant oversight themes.
-4. Return structured source list.
+## Return
 
-## Human setup (when needed)
-- If specific subpages are language-dependent, walk user through switching language/filtering and continue from shared URLs.
+- Preserve reporting period, title, chapter/topic, section URL, PDF URL when available, source index, and retrieval time.
+- Attribute findings and recommendations to the Chancellor and preserve links to cited decisions or legal acts.
 
-## Quality checks
-- Distinguish formal reports from explanatory news posts.
-- Preserve exact publication year/date.
+## Limits
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.oiguskantsler.ee/en/opinions-and-initiatives/annual-reports (HTTP 200, text/html;, file links detected: 24)
+- This recipe covers annual reporting. It does not provide a structured API for every opinion or initiative.
+- Recent reports are separate static sites; paths and chapter structure differ by year.
+- Annual reports summarize work during a period and may not contain the latest position on a topic.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the index to link several `/annual-report-{year}/` sites and historical PDF files.
+- Require the newest report site to identify its reporting period and return a valid `overview.pdf` beginning with `%PDF-`.

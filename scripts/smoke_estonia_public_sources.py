@@ -706,6 +706,115 @@ def prison_reviews() -> None:
     assert re.search(r"Viimati uuendatud:\s*\d{2}\.\d{2}\.20\d{2}", current_text)
 
 
+def consumer_decisions() -> None:
+    query = urlencode({"_wbbdl": 1, "search[company]": "Telia"})
+    data = fetch_json(
+        "https://jvis.ttja.ee/modules/"
+        "tarbijavaidluskomisjoni-otsused/avalik?" + query,
+        headers={
+            "Accept": "application/json, text/plain, */*",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+    )
+    assert isinstance(data, dict) and data.get("result") == "success"
+    assert data.get("total", 0) > 0 and data.get("items")
+    item = data["items"][0]
+    assert {
+        "company",
+        "publishing_date",
+        "document_nr",
+        "decision",
+        "summary",
+        "public_pdf_id",
+    } <= item.keys()
+    pdf, pdf_type = fetch(
+        "https://jvis.ttja.ee/modules/media/media/download/"
+        f"{item['public_pdf_id']}",
+        limit=5,
+    )
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def environmental_permits() -> None:
+    body, content_type = fetch(
+        "https://kotkas.envir.ee/permits/public_index",
+        data=urlencode({"search": 1, "owner_name": "Tallinna Vesi"}).encode(),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    total = re.search(r"Kokku\s+(\d+)\s+kirjet", text)
+    assert total and int(total.group(1)) > 0
+    match = re.search(r'/permits/public_view\?[^" ]*permit_id=(\d+)', text)
+    assert match and "TALLINNA VESI AS" in text
+
+    detail, detail_type = fetch(
+        "https://kotkas.envir.ee/permits/public_view?search=1&permit_id="
+        + match.group(1)
+    )
+    detail_text = unescape(detail.decode("utf-8", "replace"))
+    assert detail_type == "text/html" and "Olek" in detail_text
+    assert "/permits/public_detail_view?" in detail_text
+    assert "/permits/public_permit_documents_index?" in detail_text
+    assert "/permits/public_permit_assignments_index?" in detail_text
+
+
+def language_supervision() -> None:
+    page_url = (
+        "https://www.keeleamet.ee/keeleameti-tegevused-ja-eesmargid/"
+        "keeleseaduse-ja-teiste-keeleoskust-ja-keelekasutust-3"
+    )
+    body, content_type = fetch(page_url)
+    text = body.decode("utf-8", "replace")
+    assert content_type == "text/html"
+    assert 'type="application/json" id="datatable-' in text
+    links = re.findall(r'\\/sites\\/default\\/files\\/[^" ]+\.pdf', text)
+    links = sorted(set(link.replace(r"\/", "/") for link in links))
+    assert len(links) >= 10
+    assert "Keeleameti%202025.%20aasta%20tegevuse%20aruanne.pdf" in text
+    pdf, pdf_type = fetch(urljoin(page_url, links[-1]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def state_audits() -> None:
+    body, content_type = fetch("https://www.riigikontroll.ee/en/audits")
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert text.count("node--type-auditid") >= 20
+    assert re.search(r'href="/en/audits/[^"]+" class="stretched-link"', text)
+    assert "Audit report" in text and "report-title" in text
+
+    detail_url = "https://www.riigikontroll.ee/en/audits/unused-state-budget-funds"
+    detail, detail_type = fetch(detail_url)
+    detail_text = unescape(detail.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.pdf[^"]*)"', detail_text, re.IGNORECASE)
+    assert detail_type == "text/html" and links
+    assert "Unused state budget funds" in detail_text
+    assert "The National Audit Office recommends" in detail_text
+    pdf, pdf_type = fetch(urljoin(detail_url, links[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def ombudsman_reports() -> None:
+    index_url = (
+        "https://www.oiguskantsler.ee/en/opinions-and-initiatives/annual-reports"
+    )
+    body, content_type = fetch(index_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert len(re.findall(r"https://www\.oiguskantsler\.ee/annual-report-20\d{2}/", text)) >= 5
+    assert len(re.findall(r'href="[^"]+\.pdf"', text, re.IGNORECASE)) >= 10
+
+    report_url = "https://www.oiguskantsler.ee/annual-report-2025/"
+    report, report_type = fetch(report_url)
+    report_text = unescape(report.decode("utf-8", "replace"))
+    assert report_type == "text/html"
+    assert "Chancellor’s Year in Review 2024/2025" in report_text
+    assert 'href="./overview.pdf"' in report_text
+    pdf, pdf_type = fetch(urljoin(report_url, "overview.pdf"), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -769,6 +878,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "bank-of-statistics": bank,
     "business-register-open-data": business_register,
     "communicable-disease-bulletins": communicable_diseases,
+    "consumer-technical-regulator-decisions": consumer_decisions,
     "court-proceedings-data": court_proceedings,
     "court-system-statistics": court_statistics,
     "crime-policy-statistics": crime_policy,
@@ -776,6 +886,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "digital-government-studies": ria_studies,
     "election-results-data": elections,
     "energy-data": energy,
+    "environmental-permit-decisions": environmental_permits,
     "estonia-2035-action-plan": estonia_2035,
     "food-business-approvals": food_businesses,
     "geospatial-open-data": geospatial,
@@ -787,12 +898,14 @@ CHECKS: dict[str, Callable[[], None]] = {
     "legal-acts-data": legal_acts,
     "legislation-workflow-eis": legislation_workflow,
     "lobby-meetings": lobby_meetings,
+    "language-law-supervision": language_supervision,
     "marital-property-register": marital_property,
     "maritime-economy-statistics": maritime_economy,
     "ministry-document-registries": ministry_documents,
     "muis-open-data": muis,
     "open-data": open_data,
     "official-notices": official_notices,
+    "ombudsman-opinions": ombudsman_reports,
     "prison-annual-reviews": prison_reviews,
     "public-finance-data": public_finance,
     "public-sector-it-systems-riha": riha,
@@ -801,6 +914,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "statistics-api": statistics,
     "strategic-development-documents-registry": strategic_documents,
     "state-ownership-data": state_ownership,
+    "state-audit-reports": state_audits,
     "state-port-register": state_ports,
     "supreme-court-judgments": supreme_court,
     "tallinn-open-data": tallinn,

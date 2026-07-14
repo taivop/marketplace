@@ -81,6 +81,10 @@ RIA and Government Office interface audit: removed the duplicate/misdirected Gov
 
 Government Office data audit: retained five distinct working sources. Replaced generic journal and cabinet-agenda wrappers with Lotus Notes XML and search-service JSON contracts, removed stale generated table IDs from strategy recipes, and added checks for the Power BI/file discovery paths.
 
+Justice and courts audit: retained seven distinct working sources. Replaced generic wrappers with Riigi Teataja decision, hearing, and draft JSON POST contracts; the Supreme Court server-rendered search; the Official Notices XML URI scheme; and exact court, prison, and crime-publication retrieval limits.
+
+Enforcement and oversight audit: removed the Financial Supervision page that only forwarded to the general court register. Rebuilt Consumer Disputes Committee decisions around the JVIS JSON/PDF contract, KOTKAS around its public POST forms, and the Language Board, National Audit Office, and Chancellor of Justice archives around their actual document indexes.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

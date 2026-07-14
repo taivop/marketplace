@@ -19,7 +19,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Lobbying transparency | `sources/lobby-meetings` |
 | Procurement/tenders/contracts | `sources/procurement-data` |
 | Party finance and party membership | `sources/party-funding-data`, `sources/political-party-membership` |
-| State audits/constitutional oversight | `sources/state-audit-reports`, `sources/ombudsman-opinions` |
+| State audits and Chancellor of Justice annual oversight | `sources/state-audit-reports`, `sources/ombudsman-opinions` |
 | Supreme Court judgments, all-court decisions/hearings, court-system statistics | `sources/supreme-court-judgments`, `sources/court-proceedings-data`, `sources/court-system-statistics` |
 | Prison and probation annual/current indicators | `sources/prison-annual-reviews` |
 | Official notices, insolvency announcements, summons (HTML/XML/RDF/TXT) | `sources/official-notices` |
@@ -57,7 +57,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Museum collections and objects (MuIS RDF) | `sources/muis-open-data` |
 | Cultural grants and allocation rounds | `sources/kultuurkapital-grants-data` |
 | Internal security annual reviews (KAPO) | `sources/internal-security-annual-reviews` |
-| Consumer and financial supervision enforcement | `sources/consumer-technical-regulator-decisions`, `sources/financial-supervision-decisions` |
+| Consumer Disputes Committee decisions | `sources/consumer-technical-regulator-decisions` |
 | State services catalog and public-service delivery | `sources/state-services-catalog` |
 | Rescue incidents and emergency operations | `sources/rescue-incident-data` |
 | Language-law supervision and annual activity reports | `sources/language-law-supervision` |

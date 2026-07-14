@@ -1,59 +1,35 @@
 ---
 name: environmental-permit-decisions
-description: Query KOTKAS environmental decision system for permits, approvals, and environmental administrative decisions.
+description: Query KOTKAS public server-side forms for environmental permits, applications, proceedings, documents, and permit details.
 ---
 
-# Environmental Permit Decisions (KOTKAS)
+# Environmental Permits (KOTKAS)
 
-## Use when
-- You need permit/approval decision records in environmental domain.
-- You need operational permit lifecycle tracking.
+## Access
 
-## Avoid when
-- You need only environmental indicators without permit process context.
+- Permits: `https://kotkas.envir.ee/permits/public_index`
+- Applications: `https://kotkas.envir.ee/permits/public_application_index`
+- Documents: `https://kotkas.envir.ee/permits/public_document_index`
+- Public HTML forms; no login is required.
 
-## Inputs
-- Permit type, area/entity, date range, authority.
+## Retrieve
 
-## Outputs
-- Permit decision records with status chronology.
+POST form-encoded data with `search=1` to the relevant endpoint. Permit filters include `permit_nr`, `owner_name`, `object_name`, `permit_type`, `permit_status`, issue/validity date ranges, `well_number`, and location/activity fields. Application filters include `applicant`, `application_type`, `permit_nr`, `proceeding_nr`, `proceeding_public_status`, and registration dates. Document filters include `document_number`, `external_number`, `document_type`, `title`, `keyword`, sender/recipient, publication level, and registration dates.
 
-## Primary endpoints
-- Permit registry (public): https://kotkas.envir.ee/permits/public_index
-- Document registry (public): https://kotkas.envir.ee/permits/public_document_index
-- Applications registry (public): https://kotkas.envir.ee/permits/public_application_index
+Permit results are server-rendered rows with links to `/permits/public_view?...&permit_id={id}`. Page with `qs` in increments of 20 while preserving the filters. The result footer states the current page and total record count. On a permit, use the registration/detail, documents, and assignments tabs rather than treating the list row as complete.
 
-## Workflow
-1. Search for permit cases by type and geography.
-2. Extract decision dates, statuses, and case identifiers.
-3. Link associated documents where available.
-4. Return permit lifecycle dataset.
+## Return
 
-## Human setup (when needed)
-- If detailed records require UI navigation/login context, guide user through exact search and record-opening steps, then continue from shared URLs/exports.
+- Preserve permit/application/proceeding/document identifiers, holder or applicant, object and location, type, status, relevant dates, detail/document URLs, query, total, and retrieval time.
+- Keep application, proceeding, permit, and document records as separate record types.
 
-## Quality checks
-- Preserve case/permit identifiers.
-- Separate application, review, and final-decision stages.
+## Limits
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://kotkas.envir.ee/permits/public_index (HTTP 200, text/html)
+- This is HTML extraction, not a public JSON API. Estonian labels and form fields may change.
+- A permit number can appear in several lifecycle/version rows; do not deduplicate without retaining internal `permit_id` and status dates.
+- Some files or fields may be restricted even when the public register row is visible.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require a focused POST search to return a positive `Kokku ... kirjet` count and `/permits/public_view?...permit_id=` links.
+- Require a selected detail page to expose status plus registration, documents, and assignments tabs.
