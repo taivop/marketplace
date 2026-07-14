@@ -23,7 +23,7 @@
     {
       "name": "estonia-public-sources",
       "source": "./skills/.curated/estonia-public-sources",
-      "description": "Query 133 Estonian official public sources. Covers \u00e4riregister, ehitisregister, kinnistusraamat, maa-amet, statistikaamet, haigekassa, KOTKAS, keskkonnaload, riigihanked, riigiteataja, riigikogu, ametlikud teadaanded, PRIA, and more. Routes to the right source and executes retrieval workflows.",
+      "description": "Route Estonian public-data questions to documented official APIs, downloads, and reproducible public web interfaces. Use for Estonian statistics, legislation, parliament, registries, public finance, procurement, environment, health, transport, municipal records, and other official data retrieval.",
       "author": {
         "name": "Taivo Marketplace"
       }

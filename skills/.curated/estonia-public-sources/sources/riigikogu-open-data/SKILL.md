@@ -1,61 +1,54 @@
 ---
 name: riigikogu-open-data
-description: Query Riigikogu open data API for parliamentary votings, members, and legislative activity.
+description: Query the Riigikogu open data API for parliamentary votes, members, agendas, stenograms, and legislative activity.
 ---
 
 # Riigikogu Open Data API
 
 ## Use when
-- You need parliamentary voting and member-level open data.
-- You need machine-readable legislative process signals.
+- You need parliamentary votes, members, plenary agendas, or stenograms.
+- You need machine-readable legislative activity from the Riigikogu API.
 
 ## Avoid when
 - You need election outcomes (use election archive skill).
 
-## Inputs
-- Date range, language, and endpoint family.
-
-## Outputs
-- API JSON extract and cleaned analysis tables.
-
 ## Primary endpoints
-- API root: https://api.riigikogu.ee/
-- Swagger: https://api.riigikogu.ee/swagger-ui.html
-- Example votings endpoint: `https://api.riigikogu.ee/api/votings?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&lang=en`
+- OpenAPI contract: https://api.riigikogu.ee/v3/api-docs
+- Votes: `https://api.riigikogu.ee/api/votings?startDate=2025-01-01&endDate=2025-01-31&lang=EN`
+- Plenary agendas: `https://api.riigikogu.ee/api/agenda/plenary?startDate=2025-01-01&endDate=2025-01-31&lang=EN`
+- Stenograms: `https://api.riigikogu.ee/api/steno/verbatims?startDate=2025-01-01&endDate=2025-01-31`
+- Public calendar fallback: https://www.riigikogu.ee/tegevus/kalender/
+- Public stenogram fallback: https://www.riigikogu.ee/tegevus/stenogrammid/
 
 ## Workflow
-1. Inspect endpoint contract in Swagger.
-2. Query bounded date ranges.
-3. Normalize IDs, timestamps, and member/vote fields.
-4. Return dataset with endpoint and query parameters used.
-
-## Human setup (when needed)
-- Usually none.
-
-## Quality checks
-- Keep stable IDs for members and votings.
-- Store exact query window to ensure reproducibility.
+1. Choose the endpoint family from the OpenAPI contract.
+2. Query a bounded date range using ISO dates.
+3. Preserve UUIDs, timestamps, sitting metadata, speaker names, and vote values as returned.
+4. Follow UUID detail or file endpoints only when the requested record needs them.
+5. Return the exact endpoint and query parameters with the extracted records.
 
 ## Access reality
 - Public access type: API or structured endpoint access.
-- Verification run: 2026-02-24.
-- https://api.riigikogu.ee/ (HTTP 200, text/html, file links detected: 0)
-- https://api.riigikogu.ee/swagger-ui.html (HTTP 200, text/html, file links detected: 0)
-- https://api.riigikogu.ee/api/votings?startDate=YYYY-MM-DD&endDate=YYYY-MM-DD&lang=en` (HTTP 400, text/html;charset=utf-8, file links detected: 0)
+- Verified 2026-07-14 against OpenAPI version `2.21.8`.
+- The January 2025 plenary-agenda example returned HTTP 200 JSON with four top-level records.
+- The service may return HTTP 429 for rapid consecutive requests; query serially and back off before retrying.
 
 ## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- `startDate` and `endDate` use `yyyy-MM-dd`.
+- Both dates are required for `/api/votings` and `/api/steno/verbatims`; they are optional for `/api/agenda/plenary`.
+- `lang` accepts `ET`, `RU`, or `EN` and defaults to `ET` where supported.
+- Stenogram `type` accepts `IS` (sitting), `IT` (question time), or `IK` (committee sitting).
+- Responses are JSON. No authentication is documented for these endpoints.
 
 ## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Keep the record UUID, date/time, sitting or agenda identifiers, titles/topics, member or speaker identifiers, and vote/speech fields present in the selected response.
+- Preserve original field names and classifier values.
 
 ## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- Use the public calendar or stenogram pages only when the API omits content needed by the user.
+- Do not infer that a scheduled agenda item was completed; join to votes, stenograms, or documents when outcomes matter.
 
 ## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Confirm `Content-Type: application/json` and parse the response before reporting success.
+- Confirm returned dates overlap the requested window.
+- Treat HTTP 429 as rate limiting, not evidence that the endpoint is unavailable.
