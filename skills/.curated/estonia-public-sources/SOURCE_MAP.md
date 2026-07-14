@@ -45,7 +45,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Planning, construction, cadaster/geospatial | `sources/planning-decisions`, `sources/construction-register`, `sources/geospatial-open-data` |
 | Transport/traffic and energy system operations | `sources/transport-traffic-data`, `sources/energy-data` |
 | National public transport routes/stops and Peatus API | `sources/transport-traffic-data` |
-| Vehicle, aircraft, and port registry checks | `sources/vehicle-background-check`, `sources/aircraft-register`, `sources/state-port-register` |
+| Aircraft and port registry checks | `sources/aircraft-register`, `sources/state-port-register` |
 | Published aviation safety reports | `sources/aviation-safety-reports` |
 | Maritime economy indicators | `sources/maritime-economy-statistics` |
 | Cyber incidents and digital government operations | `sources/cyber-incidents-cert-ee`, `sources/public-sector-it-systems-riha`, `sources/x-road-usage-statistics`, `sources/digital-government-studies` |

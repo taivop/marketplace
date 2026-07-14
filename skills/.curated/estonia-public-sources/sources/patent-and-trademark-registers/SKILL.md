@@ -1,59 +1,57 @@
 ---
 name: patent-and-trademark-registers
-description: Use Estonian Patent Office sources for patents, trademarks, and industrial property register context and structured public-record extraction.
+description: Query the Estonian Patent Office's current public invention, trademark, and industrial-design databases.
 ---
 
 # Patent and Trademark Registers
 
-## Use when
-- You need official industrial property register context.
-- You need structured extraction of patent/trademark public records.
+## Trademarks and designs
 
-## Avoid when
-- You need non-official commercial IP datasets.
+Use the public JSON APIs behind `https://andmebaas.epa.ee/avalik/`:
 
-## Inputs
-- IP type, identifier, owner/applicant, and period.
+```text
+GET https://andmebaas.epa.ee/avalik/api/trademarks/search/findBySearchParameters
+GET https://andmebaas.epa.ee/avalik/api/designApplications/search/findBySearchParameters
+```
 
-## Outputs
-- Structured IP register outputs with official references.
+Both accept `page` (zero-based), `size`, and optional filters such as:
 
-## Primary endpoints
-- EPA online search (patents/utility models): https://online.epa.ee/
-- EPA trademarks/designs search: http://teenused.epa.ee/
-- Patent Office portal: https://www.epa.ee/
+- `registrationNumber`
+- `applicationNumber`
+- `verbalElement`
+- `applicantOwner`
+- `types`
+- `currentStatus`
+- date-range fields shown in the public form
 
-## Workflow
-1. Locate relevant register/search route for IP type.
-2. Extract public fields and status data.
-3. Normalize status and classification fields.
-4. Return structured dataset with provenance.
+Trademark searches also support `exactMatch`, `markKind`, Nice classes/terms, and Vienna image classes. Design searches also support `author`, Locarno classes, and `numberOfVariants`.
 
-## Human setup (when needed)
-- If search/export is portal-driven, guide user through lookup and continue from provided outputs.
+Results use Spring HAL: records are under `_embedded.trademarks` or `_embedded.designApplications`. Keep `id`, dossier type, application and registration numbers/dates, current status, verbal element/title, owner sort value, and relevant classification fields.
 
-## Quality checks
-- Preserve official application/registration identifiers.
-- Keep register status definitions attached.
+For related data, request the public relation directly, for example:
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.patendiamet.ee/en (HTTP 200, text/html;, file links detected: 1)
+```text
+GET https://andmebaas.epa.ee/avalik/api/trademarks/<id>/persons
+GET https://andmebaas.epa.ee/avalik/api/trademarks/<id>/goodsAndServicesSpecifications
+GET https://andmebaas.epa.ee/avalik/api/designApplications/<id>/persons
+GET https://andmebaas.epa.ee/avalik/api/designApplications/<id>/locarno
+```
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+Ignore HAL links whose host is `127.0.0.1`; reconstruct the path on `https://andmebaas.epa.ee` as shown above.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Inventions
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- Public application: `https://leiutised.epa.ee/avalik/home?selectedTab=general`
+- Use `General search` for registration/application number, dates, Estonian or English title, keyword, applicant/owner, author, representative, or status.
+- Use `Invention search` for invention-specific fields.
+- Run the browser search, then extract the result list and selected record. The application currently requires browser rendering and does not publish a supported API contract.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Limits
+
+- These databases are informative; official registers and gazette notices have legal effect.
+- Trademark data is normally updated daily, design data weekly, and invention data continuously.
+- The old `online.epa.ee` and `teenused.epa.ee` routes are filing services, not the current public search databases.
+
+## Verify
+
+For trademark/design API searches, require the expected `_embedded` collection and identifiers/status fields. For inventions, require the page title `Patendiameti avalik veebirakendus`, the two search tabs, and a result linked to the submitted identifier or term.

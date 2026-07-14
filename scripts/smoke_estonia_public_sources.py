@@ -448,6 +448,11 @@ def ria_studies() -> None:
     assert content_type == "text/html"
     assert len(re.findall(r'id="datatable-[^"]+"', text)) >= 3
     pdf_links = embedded_file_urls(text, "www.ria.ee", "pdf")
+    prelive_links = embedded_file_urls(text, "ria.prelive.vportal.ee", "pdf")
+    pdf_links.extend(
+        link.replace("https://ria.prelive.vportal.ee/", "https://www.ria.ee/")
+        for link in prelive_links
+    )
     assert len(set(pdf_links)) >= 10
     pdf, pdf_type = fetch(pdf_links[0], limit=5)
     assert pdf_type == "application/pdf" and pdf == b"%PDF-"
@@ -815,6 +820,135 @@ def ombudsman_reports() -> None:
     assert pdf_type == "application/pdf" and pdf == b"%PDF-"
 
 
+def aircraft_register() -> None:
+    body, content_type = fetch(
+        "https://www.transpordiamet.ee/ohusoidukite-register"
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    for label in (
+        "Registration mark",
+        "Type of the Aircraft",
+        "Serial number",
+        "Owner of the Aircraft",
+        "Operator of the Aircraft",
+    ):
+        assert label in text
+    assert re.search(r"\d{2}\.\d{2}\.20\d{2}/updated", text)
+    marks = re.findall(r"ES(?:&nbsp;|\s)*-(?:&nbsp;|\s)*[A-Z0-9]{3,4}", text)
+    assert len(marks) >= 100
+
+
+def aviation_reports() -> None:
+    page_url = (
+        "https://www.transpordiamet.ee/en/aviation-and-aviation-safety/"
+        "aviation-safety/reports"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert "ANS and ATM Annual Safety Oversight Reports" in text
+    links = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    reports = [link for link in links if "annual" in link or "safety_oversight" in link]
+    assert len(reports) >= 6
+    pdf, pdf_type = fetch(urljoin(page_url, reports[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def construction_register() -> None:
+    data = fetch_json(
+        "https://livekluster.ehr.ee/api/building/v2/buildingSearchPageable",
+        data=json.dumps(
+            {"buildingName": "raekoda", "page": 1, "pageSize": 2}
+        ).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(data, dict) and data.get("total", 0) > 0
+    assert data.get("data")
+    record = data["data"][0]
+    assert {"ehrCode", "buildingId", "buildingAddress", "buildingState"} <= record.keys()
+
+    detail = fetch_json(
+        "https://livekluster.ehr.ee/api/building/v3/buildingData?"
+        + urlencode({"ehr_code": record["ehrCode"], "json": "true"})
+    )
+    assert detail["ehitis"]["ehitiseAndmed"]["ehrKood"] == record["ehrCode"]
+
+
+def economic_activities() -> None:
+    jar = CookieJar()
+    opener = build_opener(HTTPCookieProcessor(jar))
+    form_request = Request(
+        "https://mtr.ttja.ee/juriidiline_isik?m=96",
+        headers={"User-Agent": USER_AGENT},
+    )
+    with opener.open(form_request, timeout=45) as response:
+        form = response.read().decode("utf-8", "replace")
+    match = re.search(
+        r'name="juriidiline_isik_filters\[_csrf_token\]" value="([^"]+)"',
+        form,
+    )
+    assert match
+    payload = urlencode(
+        [
+            ("juriidiline_isik_filters[_csrf_token]", match.group(1)),
+            ("juriidiline_isik_filters[registrikood][text]", "14532901"),
+            ("juriidiline_isik_filters[fie]", ""),
+            ("juriidiline_isik_filters[arhiveeritud_isikud]", ""),
+            ("juriidiline_isik_filters[oigsuse_kinnitus]", ""),
+            ("juriidiline_isik_filters[tegevusala_tyyp]", ""),
+            ("juriidiline_isik_filters[valjund_valjad][]", "nimi"),
+            ("juriidiline_isik_filters[valjund_valjad][]", "registrikood"),
+        ]
+    ).encode()
+    search_request = Request(
+        "https://mtr.ttja.ee/juriidiline_isik/filter/action",
+        data=payload,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    with opener.open(search_request, timeout=45) as response:
+        result = unescape(response.read().decode("utf-8", "replace"))
+    assert "Registrikood:" in result and "14532901" in result
+    detail_match = re.search(r'href="(/juriidiline_isik/\d+)\?backurl=', result)
+    assert detail_match and "Bolt Operations OÜ" in result
+
+    detail_request = Request(
+        urljoin("https://mtr.ttja.ee", detail_match.group(1)),
+        headers={"User-Agent": USER_AGENT},
+    )
+    with opener.open(detail_request, timeout=45) as response:
+        detail = unescape(response.read().decode("utf-8", "replace"))
+    assert "Majandustegevusteated" in detail and "Tegevusload" in detail
+    assert "Postiteenuse majandustegevusteade" in detail
+
+
+def patent_registers() -> None:
+    trademark_url = (
+        "https://andmebaas.epa.ee/avalik/api/trademarks/search/"
+        "findBySearchParameters?"
+        + urlencode({"verbalElement": "ESTONIA", "page": 0, "size": 1})
+    )
+    body, content_type = fetch(trademark_url)
+    trademarks = json.loads(body)
+    assert content_type == "application/hal+json"
+    trademark = trademarks["_embedded"]["trademarks"][0]
+    assert {"id", "applicationNumber", "currentStatus", "verbalElement"} <= trademark.keys()
+
+    design_url = (
+        "https://andmebaas.epa.ee/avalik/api/designApplications/search/"
+        "findBySearchParameters?"
+        + urlencode({"verbalElement": "tool", "page": 0, "size": 1})
+    )
+    body, content_type = fetch(design_url)
+    designs = json.loads(body)
+    assert content_type == "application/hal+json"
+    design = designs["_embedded"]["designApplications"][0]
+    assert {"id", "applicationNumber", "currentStatus", "verbalElement"} <= design.keys()
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -875,10 +1009,13 @@ def muis() -> None:
 
 
 CHECKS: dict[str, Callable[[], None]] = {
+    "aircraft-register": aircraft_register,
+    "aviation-safety-reports": aviation_reports,
     "bank-of-statistics": bank,
     "business-register-open-data": business_register,
     "communicable-disease-bulletins": communicable_diseases,
     "consumer-technical-regulator-decisions": consumer_decisions,
+    "construction-register": construction_register,
     "court-proceedings-data": court_proceedings,
     "court-system-statistics": court_statistics,
     "crime-policy-statistics": crime_policy,
@@ -886,6 +1023,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "digital-government-studies": ria_studies,
     "election-results-data": elections,
     "energy-data": energy,
+    "economic-activities-register-mtr": economic_activities,
     "environmental-permit-decisions": environmental_permits,
     "estonia-2035-action-plan": estonia_2035,
     "food-business-approvals": food_businesses,
@@ -906,6 +1044,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "open-data": open_data,
     "official-notices": official_notices,
     "ombudsman-opinions": ombudsman_reports,
+    "patent-and-trademark-registers": patent_registers,
     "prison-annual-reviews": prison_reviews,
     "public-finance-data": public_finance,
     "public-sector-it-systems-riha": riha,

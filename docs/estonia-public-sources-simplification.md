@@ -85,6 +85,8 @@ Justice and courts audit: retained seven distinct working sources. Replaced gene
 
 Enforcement and oversight audit: removed the Financial Supervision page that only forwarded to the general court register. Rebuilt Consumer Disputes Committee decisions around the JVIS JSON/PDF contract, KOTKAS around its public POST forms, and the Language Board, National Audit Office, and Chancellor of Justice archives around their actual document indexes.
 
+Public-register audit: removed the vehicle background check because every query requires reCAPTCHA v3. Rebuilt the aircraft table parser, EHR public building JSON search/detail calls, and MTR's cookie-and-CSRF search flow; narrowed aviation reports to their actual 2009-2015 archive. Replaced obsolete Patent Office filing URLs with the current invention browser and trademark/design JSON databases.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

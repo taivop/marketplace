@@ -20,6 +20,8 @@ Fetch the page and parse each `<script type="application/json" id="datatable-...
 
 Parse those HTML fragments with an HTML parser, not a regular expression. Keep the table's surrounding heading as the category. Categories include studies/analyses, cryptographic algorithms, cyber-security annual reports, and RIA overviews/yearbooks.
 
+If an embedded file URL uses the staging host `ria.prelive.vportal.ee`, replace only that host with `www.ria.ee` and keep the path unchanged. The published staging-host URLs return 403 while the corresponding production-host paths serve the files.
+
 The `/en/download_all_files/<id>` links are category-level browser helpers. Prefer the direct file URL from each JSON row when fetching one publication.
 
 ## Return
@@ -36,5 +38,5 @@ The `/en/download_all_files/<id>` links are category-level browser helpers. Pref
 
 ## Verify
 
-- Require multiple datatable JSON blocks, parseable rows, dates, and direct RIA PDF/reference URLs.
+- Require multiple datatable JSON blocks, parseable rows, dates, and direct RIA PDF/reference URLs after the documented staging-host normalization.
 - Require selected PDF files to begin `%PDF-`; reject navigation and category download icons as publications.
