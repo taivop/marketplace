@@ -1,57 +1,38 @@
 ---
 name: government-journal-records
-description: Query public Government Office journal records for official registry-log style entries and operational trace data.
+description: Query the Government Office's public Lotus Notes XML views for classified document series, dates, document numbers, subjects, and record details.
 ---
 
-# Government Journal Records
+# Government Office Journal Records
 
-## Use when
-- You need central journal-style operational entries.
-- You need public records by journal key/registry sequence.
+## Access
 
-## Avoid when
-- You need full document content where only metadata is published.
+- Series view: `GET https://dhs.riigikantselei.ee/avalikteave.nsf/byjournalkey?open`
+- Public XML; no login or browser JavaScript is required.
 
-## Inputs
-- Journal key, date range, topic keywords.
+## Retrieve
 
-## Outputs
-- Journal entries with IDs, dates, and summary fields.
+The root response is an `<entries>` document containing `<category>` rows. Follow a category's URL or send its exact label as the `path` parameter:
 
-## Primary endpoint
-- Public journal view: https://dhs.riigikantselei.ee/avalikteave.nsf/byjournalkey?open
+`?open&path=12-10%20Lepingud%20ja%20lepingutega%20seotud%20dokumendid`
 
-## Workflow
-1. Query by journal/date/topic.
-2. Extract listed record metadata and links.
-3. Normalize into tabular event log.
-4. Return filtered operational trace.
+Use `start` for pagination. Read `totalhits`, `start`, `count`, `from`, `to`, and the `next`/`end` links from `<entries>` rather than assuming a page size.
 
-## Human setup (when needed)
-- If navigation depends on dynamic UI controls, guide the user through the exact query steps and continue from the resulting page URL.
+Category results contain `<document noteid="..." href="...">` rows and named `<field>` children. The root `fieldtitles` block maps field names to Estonian labels. Follow `/avalikteave.nsf/documents/<noteid>?open` for the public detail record.
 
-## Quality checks
-- Keep journal key and entry order.
-- Record retrieval timestamp for reproducibility.
+## Return
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://dhs.riigikantselei.ee/avalikteave.nsf/byjournalkey?open (HTTP 200, text/xml, file links detected: 0)
+- Preserve category path, `noteid`, detail URL, every named field, source URL, and retrieval time.
+- Common fields include `date`, `docid`, `subject`, `from`, `receivedfrom`, `sentto`, document type, issuer, keywords, protocol number, meeting place, and contract dates.
+- Keep absent fields null; available fields vary by document series.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- This is an older Government Office document system and may overlap newer ADR records.
+- Category labels have historical variants; do not merge them solely by numeric prefix.
+- Detail records can omit restricted document content while retaining public metadata.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 `text/xml` whose root is `entries`, with category links and paging attributes.
+- Require a known populated category to return document rows with `noteid`, `href`, `date`, `docid`, and `subject`.

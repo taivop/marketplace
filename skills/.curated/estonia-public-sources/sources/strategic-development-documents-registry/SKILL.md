@@ -54,5 +54,5 @@ description: Retrieve the Government Office registry of active strategic develop
 - Some entries point to legal text pages instead of downloadable files.
 
 ## Verification hooks
-- Page exposes datatable id `datatable-a3937e11020480de6c1d7dda08f43caf1ecb8425e57de9baeecd454b5c2e52f0`.
-- Example rows include both file links (e.g., `Eesti digiühiskond 2030.pdf`) and Riigi Teataja links.
+- Page exposes a `script type="application/json" id="datatable-..."` block with many dated records.
+- Require both direct file links and `riigiteataja.ee` references. Do not hard-code the generated datatable ID because it changes when the table is republished.

@@ -53,5 +53,5 @@ description: Retrieve Estonia 2035 action-plan versions from Government Office d
 - Older versions may include translated titles with inconsistent naming.
 
 ## Verification hooks
-- Page exposes datatable id `datatable-723033dfdb91effe352ad94370b0ee0dd3d9b337eda455293da361d65450d13b`.
-- Datatable includes file `Eesti 2035 tegevuskava_25.04.2024.pdf` and multiple historical versions.
+- Page exposes a `script type="application/json" id="datatable-..."` block with multiple dated action-plan files.
+- At least one direct file must return a PDF. Do not hard-code the generated datatable ID because it changes when the table is republished.

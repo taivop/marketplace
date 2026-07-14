@@ -8,6 +8,7 @@ from html import unescape
 from http.cookiejar import CookieJar
 import json
 import re
+import subprocess
 import sys
 from typing import Callable
 from urllib.parse import urlencode, urljoin
@@ -38,6 +39,39 @@ def fetch_json(url: str, **kwargs: object) -> object:
     if content_type != "application/json":
         raise AssertionError(f"expected JSON, got {content_type}")
     return json.loads(body)
+
+
+def fetch_with_curl(
+    url: str,
+    *,
+    headers: dict[str, str] | None = None,
+) -> tuple[bytes, str]:
+    # Some legacy government hosts omit intermediates that urllib's CA bundle expects.
+    command = [
+        "curl",
+        "--fail",
+        "--location",
+        "--silent",
+        "--show-error",
+        "--max-time",
+        "45",
+        "--user-agent",
+        USER_AGENT,
+    ]
+    for name, value in (headers or {}).items():
+        command.extend(["--header", f"{name}: {value}"])
+    command.extend(["--write-out", "\n%{content_type}", url])
+    output = subprocess.check_output(command)
+    body, content_type = output.rsplit(b"\n", 1)
+    return body, content_type.decode().split(";", 1)[0]
+
+
+def embedded_file_urls(text: str, host: str, extension: str) -> list[str]:
+    encoded = re.findall(
+        rf'https:\\/\\/{re.escape(host)}\\/[^" ]+\.{re.escape(extension)}',
+        text,
+    )
+    return [url.replace(r"\/", "/") for url in encoded]
 
 
 def statistics() -> None:
@@ -413,11 +447,7 @@ def ria_studies() -> None:
     text = unescape(body.decode("utf-8", "replace"))
     assert content_type == "text/html"
     assert len(re.findall(r'id="datatable-[^"]+"', text)) >= 3
-    encoded_links = re.findall(
-        r'https:\\/\\/www\.ria\.ee\\/[^" ]+\.pdf',
-        text,
-    )
-    pdf_links = [link.replace(r"\/", "/") for link in encoded_links]
+    pdf_links = embedded_file_urls(text, "www.ria.ee", "pdf")
     assert len(set(pdf_links)) >= 10
     pdf, pdf_type = fetch(pdf_links[0], limit=5)
     assert pdf_type == "application/pdf" and pdf == b"%PDF-"
@@ -438,6 +468,86 @@ def lobby_meetings() -> None:
         "application/octet-stream",
     }
     assert workbook == b"PK\x03\x04"
+
+
+def government_journal() -> None:
+    query = urlencode(
+        {"open": "", "path": "12-10 Lepingud ja lepingutega seotud dokumendid"}
+    )
+    body, content_type = fetch_with_curl(
+        "https://dhs.riigikantselei.ee/avalikteave.nsf/byjournalkey?" + query
+    )
+    root = ET.fromstring(body)
+    assert content_type == "text/xml" and root.tag == "entries"
+    assert int(root.get("totalhits", "0")) > 0
+    document = root.find("document")
+    assert document is not None and document.get("noteid") and document.get("href")
+    fields = {field.get("name"): field.text or "" for field in document.findall("field")}
+    assert {"date", "docid", "subject"} <= fields.keys()
+
+
+def government_agendas() -> None:
+    query = urlencode(
+        {
+            "query": "Istungi päevakord",
+            "filters[type]": "Uudis",
+            "sort_by": "created",
+            "page": 1,
+            "limit": 2,
+            "langcode": "et",
+            "timezone": "Europe/Tallinn",
+        }
+    )
+    body, content_type = fetch_with_curl(
+        "https://search.service.eu-live.vportal.ee/v1/search/valitsus?" + query,
+        headers={"Origin": "https://valitsus.ee", "Referer": "https://valitsus.ee/"},
+    )
+    assert content_type == "application/json"
+    data = json.loads(body)
+    response = data.get("response", {}) if isinstance(data, dict) else {}
+    assert response.get("numFound", 0) > 0 and response.get("docs")
+    assert {"title", "uri", "created", "content"} <= response["docs"][0].keys()
+    assert any(
+        "istungi" in item["title"].lower() and "päevakord" in item["title"].lower()
+        for item in response["docs"]
+    )
+
+
+def government_action_programme() -> None:
+    body, content_type = fetch(
+        "https://www.valitsus.ee/valitsuse-eesmargid-ja-tegevused/"
+        "valitsemise-alused/tegevusprogramm-0"
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert text.count("https://app.powerbi.com/view?") >= 2
+    assert "pageName=06bb907844ed3bab3769" in text
+    assert "pageName=80b7f5658c06fa5ad0c1" in text
+    assert "töödeldaval kujul" in text
+
+
+def estonia_2035() -> None:
+    body, content_type = fetch(
+        "https://www.valitsus.ee/strateegia-eesti-2035-arengukavad-ja-planeering/"
+        "eesti-2035-tegevuskava"
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html" and 'type="application/json" id="datatable-' in text
+    pdf_links = embedded_file_urls(text, "www.valitsus.ee", "pdf")
+    assert len(set(pdf_links)) >= 3
+    pdf, pdf_type = fetch(pdf_links[0], limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def strategic_documents() -> None:
+    body, content_type = fetch(
+        "https://www.valitsus.ee/strateegia-eesti-2035-arengukavad-ja-planeering/"
+        "strateegilised-arengudokumendid/kehtivad"
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html" and 'type="application/json" id="datatable-' in text
+    assert "riigiteataja.ee" in text
+    assert len(set(embedded_file_urls(text, "www.valitsus.ee", "pdf"))) >= 10
 
 
 def geospatial() -> None:
@@ -507,8 +617,12 @@ CHECKS: dict[str, Callable[[], None]] = {
     "digital-government-studies": ria_studies,
     "election-results-data": elections,
     "energy-data": energy,
+    "estonia-2035-action-plan": estonia_2035,
     "food-business-approvals": food_businesses,
     "geospatial-open-data": geospatial,
+    "government-action-programme": government_action_programme,
+    "government-journal-records": government_journal,
+    "government-session-agendas": government_agendas,
     "health-supervision-decisions": health_supervision,
     "healthcare-professionals-register": healthcare_professionals,
     "legal-acts-data": legal_acts,
@@ -523,6 +637,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "public-sector-it-systems-riha": riha,
     "riigikogu-open-data": riigikogu,
     "statistics-api": statistics,
+    "strategic-development-documents-registry": strategic_documents,
     "state-ownership-data": state_ownership,
     "state-port-register": state_ports,
     "tallinn-open-data": tallinn,

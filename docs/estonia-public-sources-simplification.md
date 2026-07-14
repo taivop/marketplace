@@ -79,6 +79,8 @@ Health Board interface audit: retained four distinct public datasets but replace
 
 RIA and Government Office interface audit: removed the duplicate/misdirected Government Office document-register wrapper. Replaced obsolete UI routes with RIHA and X-Road JSON contracts, and made RIA cyber/study publications and quarterly lobbying workbooks directly discoverable and testable.
 
+Government Office data audit: retained five distinct working sources. Replaced generic journal and cabinet-agenda wrappers with Lotus Notes XML and search-service JSON contracts, removed stale generated table IDs from strategy recipes, and added checks for the Power BI/file discovery paths.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.
