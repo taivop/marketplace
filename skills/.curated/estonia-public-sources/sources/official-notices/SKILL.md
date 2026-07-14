@@ -1,57 +1,40 @@
 ---
 name: official-notices
-description: Query Ametlikud Teadaanded official notices for public announcements, summons, insolvency, and statutory publication workflows.
+description: Retrieve public Ametlikud Teadaanded notices as HTML, XML, RDF, or text through its documented stable URI scheme.
 ---
 
-# Estonia Official Notices
+# Official Notices
 
-## Use when
-- You need official publication notices and statutory announcements.
-- You need organization/person/process-level notice tracking.
+## Access
 
-## Avoid when
-- You need detailed court-case documents beyond notice publication.
+- URI contract and current type slugs: `https://www.ametlikudteadaanded.ee/avalik/uriotsing`
+- Interactive search: `POST https://www.ametlikudteadaanded.ee/avalik/otsing`
+- Public notice URIs: `https://www.ametlikudteadaanded.ee/ee/...`
 
-## Inputs
-- Notice type, party/entity name, date range.
+## Retrieve
 
-## Outputs
-- Notice list with publication metadata and links.
+Build a URI in this order:
 
-## Primary endpoint
-- URI search: https://www.ametlikudteadaanded.ee/avalik/uriotsing
+`/ee/{publisher}/{main-type}/{subtype}/{year}/{month}/{day}/{notice-number}/{format}`
 
-## Workflow
-1. Search by entity/name/type/date.
-2. Open notice entries and capture publication fields.
-3. Normalize notice type and status for analysis.
-4. Return structured notice dataset.
+Trailing components may be omitted. Use `-` for an unused publisher, main type, or subtype in the middle. The optional format is `xml`, `rdf`, or `txt`; without it the response is HTML. For example, `/ee/-/advokatuur/xml` returns a public XML collection for the `advokatuur` main type.
 
-## Human setup (when needed)
-- If query flow requires interactive form inputs/captcha, guide user step-by-step and continue from resulting notice links.
+Read publisher and type slugs from the URI contract page. XML collections use root element `at:teadaanded`; each `at:teadaanne` includes the notice number, canonical URL, type, legal basis, purpose, publisher, publication data, and notice-specific fields.
 
-## Quality checks
-- Preserve publication date and notice category exactly.
-- Distinguish notices from underlying legal actions.
+For ad hoc name/keyword searches, POST `do_search=1`, `o__search_term`, and optional `o__teate_liigid`, `o__teate_alaliik_list`, `o__avaldamise_kuupaev_alates`, and `o__avaldamise_kuupaev_kuni` to `/avalik/otsing`.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.ametlikudteadaanded.ee/avalik/uriotsing (HTTP 200, text/html;, file links detected: 1)
+## Return
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- Preserve notice number, canonical URL, publication date, publisher, main/subtype, legal basis, status, matched party fields, query URI, and retrieval time.
+- Keep notice publication distinct from the underlying court, insolvency, procurement, or administrative action.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Limits
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- URI searches return at most 1,000 results. Narrow by type and date when completeness matters.
+- The open URI interface excludes archived notices and notices addressed to natural persons for service.
+- Notice XML can contain personal data lawfully published in the source. Return only fields needed for the user's request.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Verify
+
+- Require the contract page to contain the documented URI pattern and current type slugs.
+- Require a collection URI ending in `/xml` to return parseable XML with `at:teadaanded` and at least one `at:teadaanne` containing `teate_number` and `url`.

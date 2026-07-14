@@ -1,57 +1,44 @@
 ---
 name: supreme-court-judgments
-description: Query Estonian Supreme Court judgment publications for case-law context that shapes governance and administrative practice.
+description: Query the Supreme Court's public server-rendered judgment search by case number, date, proceeding type, annotation, or text.
 ---
 
 # Supreme Court Judgments
 
-## Use when
-- You need Supreme Court case-law references.
-- You need jurisprudence context for administrative/governance questions.
+## Access
 
-## Avoid when
-- You need lower-court bulk proceedings without Supreme Court focus.
+- Supreme Court page: `https://www.riigikohus.ee/et/lahendid`
+- Search endpoint embedded by that page: `GET https://rikos.rik.ee/`
+- Public HTML; no login or browser automation is required.
 
-## Inputs
-- Case topic, chamber/type, date range, keywords.
+## Retrieve
 
-## Outputs
-- Judgment list with metadata and links.
+Send search fields as query parameters. The short parameter names accepted by the public form include:
 
-## Primary endpoint
-- Judgments page (ET): https://www.riigikohus.ee/et/lahendid
+- `asjaNr`: case number
+- `asjaLiigidIds`: case type classifier, repeat for multiple values
+- `syyteoLiigidIds`: offence type classifier
+- `otsuseKpalgus`, `otsuseKpLopp`: decision date range
+- `annotatsioon`: annotation text
+- `tekst`: full-text term
+- `pageSize`: 1-100
+- `sortVaartus`: `LahendiKuulutamiseAeg` or `Menetlus.MenetluseNR`
+- `sortAsc`: `true` or `false`
 
-## Workflow
-1. Search/filter judgments by topic/date.
-2. Extract case references and dates.
-3. Capture decision summaries or linked full text.
-4. Return legal-context dataset.
+For example, `?tekst=pohiseadus&pageSize=25` returns matching rows. Follow `/LahendiOtsingEriVaade?asjaNr=...` for the decision view. Add `genereeriPdf=True` to the same search query for the site's result-list PDF.
 
-## Human setup (when needed)
-- If filtering is UI-only or Estonian-only, provide exact user steps to locate target judgments and continue from shared links.
+## Return
 
-## Quality checks
-- Preserve case number and date format.
-- Do not infer holdings beyond published text.
+- Preserve case number, decision date/type, title or annotation, detail URL, search parameters, result count, and retrieval time.
+- Link the decision text or file itself when available; do not summarize a holding from the result-list snippet alone.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.riigikohus.ee/et/lahendid (HTTP 200, text/html;, file links detected: 7)
+## Limits
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- This search is Supreme Court-specific. Use `court-proceedings-data` for all court levels and public hearing listings.
+- Search results are HTML, not JSON. Parse the result table and resolve relative links against `https://rikos.rik.ee/`.
+- Some judgments are redacted or not publicly available.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Verify
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require a focused text query to return a positive `Tulemused` count and rows with `/LahendiOtsingEriVaade?asjaNr=` links.
+- Confirm that the Supreme Court page still embeds `https://rikos.rik.ee/`; reject unrelated files linked elsewhere on the page as judgment results.

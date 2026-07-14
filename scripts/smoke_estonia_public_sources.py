@@ -550,6 +550,162 @@ def strategic_documents() -> None:
     assert len(set(embedded_file_urls(text, "www.valitsus.ee", "pdf"))) >= 10
 
 
+def court_proceedings() -> None:
+    general = {
+        "searchInText": False,
+        "searchInTitle": False,
+        "searchText": "",
+        "searchText2": "",
+        "logicalOperator": "AND",
+        "morphSearch": False,
+    }
+    decisions = fetch_json(
+        "https://www.riigiteataja.ee/public-api/api/v1/"
+        "kohtuteave/otsing/kohtulahendid",
+        data=json.dumps(
+            {
+                "general": {
+                    **general,
+                    "sort": "toiminguNr",
+                    "sortAscending": False,
+                },
+                "precise": {"kohus": [], "seaduseSatted": {}},
+            }
+        ).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(decisions, dict) and decisions.get("kokku", 0) > 0
+    assert decisions.get("tulemused")
+    assert {
+        "objektId",
+        "kohtuasjaNumber",
+        "lahendiKuulutamiseAeg",
+    } <= decisions["tulemused"][0].keys()
+
+    hearings = fetch_json(
+        "https://www.riigiteataja.ee/public-api/api/v1/"
+        "kohtuteave/otsing/kohtuistungid",
+        data=json.dumps(
+            {
+                "general": {
+                    **general,
+                    "sort": "kehtivuseAlgus",
+                    "sortAscending": True,
+                },
+                "precise": {"kohus": []},
+            }
+        ).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(hearings, dict) and hearings.get("kokku", 0) > 0
+    assert hearings.get("tulemused")
+    assert {"kohtuasjaNr", "kohus", "istungiAeg"} <= hearings["tulemused"][0].keys()
+
+
+def court_statistics() -> None:
+    body, content_type = fetch(
+        "https://www.kohus.ee/eesti-kohtud/kohtute-menetlusstatistika"
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert "OWVjNWMxY2ItMDgwMS00NzhiLWIzOTctMDM5NTFlNjczNGE4" in text
+    assert "OGQ5MmY3YWItZjM0Zi00OWNlLThjZWYtZDIzN2IyY2YwNmYw" in text
+    assert "https://www.riigikohus.ee/et/riigikohus/statistika" in text
+
+
+def supreme_court() -> None:
+    query = urlencode({"tekst": "põhiseadus", "pageSize": 5})
+    body, content_type = fetch("https://rikos.rik.ee/?" + query)
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    match = re.search(r"Tulemused:\s*\((\d+)\)", text)
+    assert match and int(match.group(1)) > 0
+    assert re.search(r'href="/LahendiOtsingEriVaade\?asjaNr=[^"]+"', text)
+
+
+def official_notices() -> None:
+    contract, content_type = fetch(
+        "https://www.ametlikudteadaanded.ee/avalik/uriotsing"
+    )
+    contract_text = unescape(contract.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert all(
+        component in contract_text
+        for component in ("{andmeandja}", "{pealiik}", "{alaliik}", "{teate_number}")
+    )
+    assert "advokatuur" in contract_text
+
+    body, xml_type = fetch(
+        "https://www.ametlikudteadaanded.ee/ee/-/advokatuur/xml"
+    )
+    root = ET.fromstring(body)
+    namespace = "http://www.ametlikudteadaanded.ee/xsd/2014-06-01/teadaanne.xsd"
+    notices = root.findall(f"{{{namespace}}}teadaanne")
+    assert xml_type in {"text/xml", "application/xml"} and notices
+    assert notices[0].findtext("teate_number")
+    assert notices[0].findtext("url", "").startswith("https://")
+
+
+def draft_acts() -> None:
+    payload = {
+        "general": {
+            "searchInText": False,
+            "searchInTitle": False,
+            "searchText": "",
+            "searchText2": "",
+            "logicalOperator": "AND",
+            "morphSearch": False,
+            "sort": "esimeseEtapiAeg",
+            "sortAscending": False,
+        },
+        "precise": {},
+    }
+    data = fetch_json(
+        "https://www.riigiteataja.ee/public-api/api/v1/otsing/eelnoud",
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(data, dict) and data.get("kokku", 0) > 0
+    assert data.get("tulemused")
+    result = data["tulemused"][0]
+    assert {"id", "pealkiri", "menetlusKaik", "etapid"} <= result.keys()
+    assert result["etapid"]
+    assert {"etapp", "aeg", "staatus", "menetlusTeave"} <= result["etapid"][0].keys()
+
+
+def crime_policy() -> None:
+    page_url = (
+        "https://www.kriminaalpoliitika.ee/et/statistika-ja-uuringud/"
+        "kuritegevus-eestis"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    assert content_type == "text/html" and len(links) >= 10
+    assert text.count("Kuritegevus Eestis 20") >= 10
+    pdf, pdf_type = fetch(urljoin(page_url, links[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def prison_reviews() -> None:
+    annual, annual_type = fetch(
+        "https://vanglateenistus.ee/meist/uudised-ja-arvud/aasta-ulevaated"
+    )
+    annual_text = unescape(annual.decode("utf-8", "replace"))
+    assert annual_type == "text/html"
+    assert len(re.findall(r"20\d{2}\. aasta ülevaade", annual_text)) >= 5
+    assert len(re.findall(r'/sites/default/files/[^" ]+\.png', annual_text)) >= 20
+
+    current, current_type = fetch(
+        "https://vanglateenistus.ee/meist/uudised-ja-arvud/"
+        "paevakohane-arvuline-ulevaade"
+    )
+    current_text = unescape(current.decode("utf-8", "replace"))
+    assert current_type == "text/html"
+    assert current_text.count("https://app.fabric.microsoft.com/view?") >= 2
+    assert re.search(r"Viimati uuendatud:\s*\d{2}\.\d{2}\.20\d{2}", current_text)
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -613,6 +769,9 @@ CHECKS: dict[str, Callable[[], None]] = {
     "bank-of-statistics": bank,
     "business-register-open-data": business_register,
     "communicable-disease-bulletins": communicable_diseases,
+    "court-proceedings-data": court_proceedings,
+    "court-system-statistics": court_statistics,
+    "crime-policy-statistics": crime_policy,
     "cyber-incidents-cert-ee": cyber_incidents,
     "digital-government-studies": ria_studies,
     "election-results-data": elections,
@@ -633,13 +792,17 @@ CHECKS: dict[str, Callable[[], None]] = {
     "ministry-document-registries": ministry_documents,
     "muis-open-data": muis,
     "open-data": open_data,
+    "official-notices": official_notices,
+    "prison-annual-reviews": prison_reviews,
     "public-finance-data": public_finance,
     "public-sector-it-systems-riha": riha,
     "riigikogu-open-data": riigikogu,
+    "riigiteataja-draft-acts": draft_acts,
     "statistics-api": statistics,
     "strategic-development-documents-registry": strategic_documents,
     "state-ownership-data": state_ownership,
     "state-port-register": state_ports,
+    "supreme-court-judgments": supreme_court,
     "tallinn-open-data": tallinn,
     "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,

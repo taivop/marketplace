@@ -1,57 +1,53 @@
 ---
 name: riigiteataja-draft-acts
-description: Query Riigi Teataja draft-act search for legal drafting stream monitoring and draft-text retrieval.
+description: Query Riigi Teataja's public JSON API for draft-act proceedings, stages, issuers, statuses, and links back to EIS documents.
 ---
 
-# Riigi Teataja Draft Acts
+# Riigi Teataja Draft Proceedings
 
-## Use when
-- You need public draft-act discovery and monitoring.
-- You need links between drafts and final legal instruments.
+## Access
 
-## Avoid when
-- You only need enacted/current legal text.
+- Search UI: `https://www.riigiteataja.ee/et/otsing/eelnoud`
+- Search API: `POST https://www.riigiteataja.ee/public-api/api/v1/otsing/eelnoud`
+- Detail API: `POST https://www.riigiteataja.ee/public-api/api/v1/avalik/eelnou`
+- Public JSON; no login is required.
 
-## Inputs
-- Draft topic, issuer, date range.
+## Retrieve
 
-## Outputs
-- Draft-act search results with metadata and links.
+Use this minimal search payload:
 
-## Primary endpoint
-- Draft search: https://www.riigiteataja.ee/eelnoud/otsing.html
+```json
+{
+  "general": {
+    "searchInText": false,
+    "searchInTitle": false,
+    "searchText": "",
+    "searchText2": "",
+    "logicalOperator": "AND",
+    "morphSearch": false,
+    "sort": "esimeseEtapiAeg",
+    "sortAscending": false
+  },
+  "precise": {}
+}
+```
 
-## Workflow
-1. Run draft search with focused terms.
-2. Capture draft identifiers, dates, and issuing body.
-3. Follow links to draft documents and related acts.
-4. Return tracking table suitable for updates.
+Precise fields are `aktiAndja`, `eelnouLiik`, `menetluseAlgus`, `menetluseLopp`, `menetluseEtapp`, and `menetluseNr`. The response contains `kokku` and up to 30 `tulemused`; each result includes `id`, `pealkiri`, `eelnouLiik`, `aktiAndja`, `menetluseAlgus`, `menetlusKaik`, and stage records in `etapid`.
 
-## Human setup (when needed)
-- If filters are UI-only, walk user through exact settings and ask for result URL or exported file.
+To resolve one proceeding, POST `{"menetluseId":"REM/26-0818"}` to `/avalik/eelnou`. Follow each stage's `menetlusTeave` URL to EIS for draft files and coordination material.
 
-## Quality checks
-- Keep draft and enacted references separate.
-- Preserve official identifiers and document dates.
+## Return
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.riigiteataja.ee/eelnoud/otsing.html (HTTP 200, text/html;charset=utf-8, file links detected: 0)
+- Preserve the Riigi Teataja ID, title, type and issuer codes, proceeding number, start date, every stage's name/time/authority/status/EIS URL, query, and retrieval time.
+- Keep draft proceedings separate from enacted acts. Use `legal-acts-data` to resolve final law text.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- The search returns 30 rows and exposes no documented bulk pagination contract. Use date, issuer, type, or proceeding-number filters.
+- Issuer and type values are classifier codes; read current choices from the search UI rather than guessing labels.
+- Riigi Teataja indexes the lifecycle, while EIS holds the underlying draft documents.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 JSON with positive `kokku` and nonempty `tulemused` for the minimal search payload.
+- Require result rows to contain `id`, `pealkiri`, `menetlusKaik`, and nonempty `etapid`; require stage records to contain `etapp`, `aeg`, `staatus`, and `menetlusTeave`.

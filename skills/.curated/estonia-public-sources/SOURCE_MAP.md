@@ -20,9 +20,9 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Procurement/tenders/contracts | `sources/procurement-data` |
 | Party finance and party membership | `sources/party-funding-data`, `sources/political-party-membership` |
 | State audits/constitutional oversight | `sources/state-audit-reports`, `sources/ombudsman-opinions` |
-| Supreme Court and court case flows | `sources/supreme-court-judgments`, `sources/court-proceedings-data`, `sources/court-system-statistics` |
-| Prison system annual operations | `sources/prison-annual-reviews` |
-| Official notices, insolvency announcements, summons | `sources/official-notices` |
+| Supreme Court judgments, all-court decisions/hearings, court-system statistics | `sources/supreme-court-judgments`, `sources/court-proceedings-data`, `sources/court-system-statistics` |
+| Prison and probation annual/current indicators | `sources/prison-annual-reviews` |
+| Official notices, insolvency announcements, summons (HTML/XML/RDF/TXT) | `sources/official-notices` |
 | Business entities and company baseline data | `sources/business-register-open-data` |
 | Licensed economic activity (MTR) | `sources/economic-activities-register-mtr` |
 | State assets / state ownership | `sources/state-assets-register`, `sources/state-ownership-data` |
@@ -63,7 +63,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Language-law supervision and annual activity reports | `sources/language-law-supervision` |
 | Marital property registry | `sources/marital-property-register` |
 | Patent and trademark registers | `sources/patent-and-trademark-registers` |
-| Crime-policy statistical studies | `sources/crime-policy-statistics` |
+| Crime-policy studies, historical annual reports, selected research datasets | `sources/crime-policy-statistics` |
 | Education registries and EHIS extracts | `sources/education-data` |
 | Research projects/publications/institutions (ETIS) | `sources/etis-research-information-system` |
 | Registered and approved food or feed business operators | `sources/food-business-approvals` |
