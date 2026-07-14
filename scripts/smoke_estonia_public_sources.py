@@ -546,14 +546,32 @@ def estonia_2035() -> None:
 
 
 def strategic_documents() -> None:
-    body, content_type = fetch(
+    page_url = (
         "https://www.valitsus.ee/strateegia-eesti-2035-arengukavad-ja-planeering/"
         "strateegilised-arengudokumendid/kehtivad"
     )
+    body, content_type = fetch(page_url)
     text = unescape(body.decode("utf-8", "replace"))
     assert content_type == "text/html" and 'type="application/json" id="datatable-' in text
-    assert "riigiteataja.ee" in text
-    assert len(set(embedded_file_urls(text, "www.valitsus.ee", "pdf"))) >= 10
+    blocks = re.findall(
+        r'<script[^>]+type="application/json"[^>]+id="datatable-[^"]+"[^>]*>'
+        r"(.*?)</script>",
+        text,
+        re.DOTALL,
+    )
+    tables = [json.loads(block) for block in blocks]
+    rows = next(table for table in tables if isinstance(table, list))
+    assert len(rows) >= 20 and all(len(row) == 3 for row in rows)
+    links = {
+        link
+        for row in rows
+        for link in re.findall(r'href="([^"]+)"', "".join(row))
+    }
+    pdf_links = [link for link in links if link.lower().endswith(".pdf")]
+    assert len(pdf_links) >= 10
+    assert any("riigiteataja.ee" in link for link in links)
+    pdf, pdf_type = fetch(urljoin(page_url, pdf_links[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
 
 
 def court_proceedings() -> None:
@@ -763,6 +781,91 @@ def environmental_permits() -> None:
     assert "/permits/public_detail_view?" in detail_text
     assert "/permits/public_permit_documents_index?" in detail_text
     assert "/permits/public_permit_assignments_index?" in detail_text
+
+
+def environmental_charges() -> None:
+    page_url = (
+        "https://www.keskkonnaamet.ee/en/supervision-environmental-charge/"
+        "environmental-charge/statistics"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.xlsx[^"]*)"', text, re.IGNORECASE)
+    assert content_type == "text/html" and links
+    workbook, workbook_type = fetch(
+        urljoin(page_url, links[0]),
+        headers={"Referer": page_url},
+        limit=4,
+    )
+    assert workbook_type == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert workbook == b"PK\x03\x04"
+
+
+def forest_register() -> None:
+    search = fetch_json(
+        "https://register.metsad.ee/portaal/api/rest/eraldis/puu?"
+        "kinnistuNr=12345"
+    )
+    assert isinstance(search, list) and search
+    subunits = search[0].get("alamYksused", [])
+    assert subunits and subunits[0].get("eraldised")
+    stand = subunits[0]["eraldised"][0]
+    assert {"id", "katastriNr", "eraldiseNr", "pindala", "alaGeoJson"} <= stand.keys()
+
+    detail = fetch_json(
+        "https://register.metsad.ee/portaal/api/rest/eraldis/detail/"
+        f"{stand['id']}"
+    )
+    assert isinstance(detail, dict) and detail.get("id") == stand["id"]
+    assert detail.get("katastriNr") == stand["katastriNr"]
+    assert {"inventKp", "maakond", "vald", "elemendid", "tood"} <= detail.keys()
+
+
+def planning_register() -> None:
+    search = fetch_json(
+        "https://www.planeeringud.ee/plank-web/api/planeering/otsing?"
+        "page=0&size=2&sort=kehtestkp,desc",
+        data=b'{"otsistring":"Vanalinna"}',
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(search, dict) and search.get("content")
+    record = search["content"][0]
+    assert {"sysid", "planid", "plannim", "planseisNimi", "korraldaja"} <= record.keys()
+
+    detail = fetch_json(
+        "https://www.planeeringud.ee/plank-web/api/planeering/"
+        f"{record['sysid']}"
+    )
+    assert isinstance(detail, dict) and detail.get("sysid") == record["sysid"]
+    documents = detail.get("planDokuments", [])
+    assert documents and all(item.get("filePublicUrl") for item in documents)
+
+
+def cultural_heritage() -> None:
+    base_url = "https://register.muinas.ee/public.php?menuID=monument"
+    body, content_type = fetch(
+        base_url,
+        data=urlencode({"regnr": "31165"}).encode(),
+        headers={"Content-Type": "application/x-www-form-urlencoded"},
+    )
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert "Kokku: 1" in text and "Kunda mõisa tööstushoonete kompleks" in text
+    match = re.search(
+        r'href="([^"]*menuID=monument(?:&amp;|&)action=view(?:&amp;|&)id=31165)"',
+        text,
+    )
+    assert match
+
+    detail, detail_type = fetch(
+        urljoin(base_url, match.group(1).replace("&amp;", "&"))
+    )
+    detail_text = unescape(detail.decode("utf-8", "replace"))
+    assert detail_type == "text/html" and "31165 Kunda mõisa" in detail_text
+    assert "Mälestise nimi" in detail_text
+    assert "Mälestise registri number" in detail_text
 
 
 def language_supervision() -> None:
@@ -1142,6 +1245,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "communicable-disease-bulletins": communicable_diseases,
     "consumer-technical-regulator-decisions": consumer_decisions,
     "construction-register": construction_register,
+    "cultural-heritage-register": cultural_heritage,
     "court-proceedings-data": court_proceedings,
     "court-system-statistics": court_statistics,
     "crime-policy-statistics": crime_policy,
@@ -1151,9 +1255,11 @@ CHECKS: dict[str, Callable[[], None]] = {
     "energy-data": energy,
     "economic-activities-register-mtr": economic_activities,
     "eu-funded-projects": eu_funded_projects,
+    "environmental-charge-statistics": environmental_charges,
     "environmental-permit-decisions": environmental_permits,
     "estonia-2035-action-plan": estonia_2035,
     "food-business-approvals": food_businesses,
+    "forest-register": forest_register,
     "geospatial-open-data": geospatial,
     "government-action-programme": government_action_programme,
     "government-journal-records": government_journal,
@@ -1174,6 +1280,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "official-notices": official_notices,
     "ombudsman-opinions": ombudsman_reports,
     "patent-and-trademark-registers": patent_registers,
+    "planning-decisions": planning_register,
     "prison-annual-reviews": prison_reviews,
     "public-finance-data": public_finance,
     "public-sector-it-systems-riha": riha,

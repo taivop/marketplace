@@ -39,7 +39,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Health insurance financing and service volumes | `sources/health-insurance-fund-reports` |
 | Medicines market and regulatory annual statistics | `sources/medicines-agency-statistics` |
 | Welfare and unemployment | `sources/social-insurance-statistics`, `sources/unemployment-statistics`, `sources/health-welfare-open-data` |
-| Environment, permits, weather | `sources/environmental-data`, `sources/environmental-permit-decisions`, `sources/weather-data` |
+| Environment permits and weather observations | `sources/environmental-permit-decisions`, `sources/weather-data` |
 | Environmental charge supervision statistics | `sources/environmental-charge-statistics` |
 | Forestry register records | `sources/forest-register` |
 | Planning, construction, cadaster/geospatial | `sources/planning-decisions`, `sources/construction-register`, `sources/geospatial-open-data` |

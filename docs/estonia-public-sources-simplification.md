@@ -89,6 +89,8 @@ Public-register audit: removed the vehicle background check because every query 
 
 Funding and grants audit: retained four distinct project or award datasets. Replaced the broken Structural Funds/manual-fallback recipe with RTK's public Nextcloud WebDAV workbook contract; rebuilt PRIA's tokenized recipient CSV and AKTA's session-backed project CSV flows; and reduced Kultuurkapital to its round index, HTML tables, heading context, and amount normalization. Removed the unrelated MFA policy-document catalog and stale RTK/Structural Funds entry pages from the data recipes.
 
+Environment and land-use audit: removed the generic Environmental Portal topic wrapper because it did not identify a retrievable dataset beyond existing open-data, permit, weather, and geospatial routes. Rebuilt Environmental Board charge statistics around its discoverable XLSX workbook, the Forest Register and national planning register around their public JSON APIs, and the Cultural Monuments Register around its exact HTML search/detail contract.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.
