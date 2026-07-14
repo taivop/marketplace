@@ -1,57 +1,36 @@
 ---
 name: lobby-meetings
-description: Track published lobbying meetings and related transparency records from the Estonian Government Office.
+description: Download quarterly XLSX disclosures of meetings between lobbyists and Estonia's prime minister or Government Office officials.
 ---
 
-# Lobby Meetings Tracking
+# Government Office Lobby Meetings
 
-## Use when
-- You need transparency data on meetings with lobbyists.
-- You need influence-context records around policy decisions.
+## Access
 
-## Avoid when
-- You need formal legal acts without stakeholder context.
+- Index: `https://www.riigikantselei.ee/asutus-uudised-ja-kontakt/lobitegevus/lobistidega-kohtumised`
+- Public server-rendered HTML with quarterly XLSX files; no login is required.
 
-## Inputs
-- Institution/official, time range, topic/entity keywords.
+## Retrieve
 
-## Outputs
-- Meeting timeline with participant/topic metadata.
+1. Fetch the index and select the required year/quarter accordion.
+2. Extract the `.xlsx` link, resolving relative `/sites/default/files/documents/...` paths against the index URL.
+3. Download and parse with a spreadsheet library.
 
-## Primary endpoint
-- Lobby meetings page: https://www.riigikantselei.ee/asutus-uudised-ja-kontakt/lobitegevus/lobistidega-kohtumised
+Use the workbook's own headers. Typical fields identify the meeting date, official, lobbyist/person or organization, and subject. Preserve all sheets because revised files or explanatory tabs may accompany the records.
 
-## Workflow
-1. Open lobbying meetings publication view.
-2. Collect meeting records and attached context where available.
-3. Normalize dates, participants, and topics.
-4. Return analysis-ready timeline.
+## Return
 
-## Human setup (when needed)
-- If records are split across downloadable files/pages, walk user through retrieval and continue from downloaded files.
+- Return one row per disclosed meeting with year, quarter, date, official, lobbyist/organization, subject, original workbook/sheet, source URL, and retrieval time.
+- Preserve names and organization labels exactly as published.
+- Deduplicate only exact repeated rows across revised quarter files, and retain the revision source.
 
-## Quality checks
-- Distinguish meeting announcements from retrospective disclosures.
-- Keep names and organization labels exactly as published.
+## Limits
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.riigikantselei.ee/asutus-uudised-ja-kontakt/lobitegevus/lobistidega-kohtumised (HTTP 200, text/html;, file links detected: 9)
+- The page covers the prime minister and Government Office; other public bodies publish their own disclosures.
+- File naming dates do not always equal the covered quarter or revision date.
+- Absence from a disclosure file is not evidence that no contact occurred.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the index to expose multiple year accordions and multiple `.xlsx` links.
+- Require each workbook to begin with the ZIP signature `PK` and contain at least one nonempty worksheet with the expected meeting fields.

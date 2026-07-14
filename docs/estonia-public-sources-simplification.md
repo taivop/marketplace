@@ -77,6 +77,8 @@ Transport Administration interface audit: removed fairway-dues and ship-registra
 
 Health Board interface audit: retained four distinct public datasets but replaced their generic wrappers with exact bulletin/precept file discovery, MEDRE JSON/XML API, and vaccination Tableau export contracts.
 
+RIA and Government Office interface audit: removed the duplicate/misdirected Government Office document-register wrapper. Replaced obsolete UI routes with RIHA and X-Road JSON contracts, and made RIA cyber/study publications and quarterly lobbying workbooks directly discoverable and testable.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

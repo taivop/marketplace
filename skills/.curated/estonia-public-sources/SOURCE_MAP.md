@@ -12,7 +12,7 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Final laws and legal texts | `sources/legal-acts-data` |
 | President decisions and decrees | `sources/president-decisions-decrees` |
 | Cabinet/government meeting agendas | `sources/government-session-agendas` |
-| Government document trails and registries | `sources/ministry-document-registries`, `sources/government-office-document-register`, `sources/government-journal-records` |
+| Government document trails and registries | `sources/ministry-document-registries`, `sources/government-journal-records` |
 | Government action programme tracking | `sources/government-action-programme` |
 | Estonia 2035 action plan updates | `sources/estonia-2035-action-plan` |
 | Registry of active strategic development documents | `sources/strategic-development-documents-registry` |

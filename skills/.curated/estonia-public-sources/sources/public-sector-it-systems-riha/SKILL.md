@@ -1,57 +1,47 @@
 ---
 name: public-sector-it-systems-riha
-description: Query RIHA information-systems registry for official metadata about Estonian public-sector IT systems, owners, and integration context.
+description: Query RIHA's public JSON API for Estonian information systems, owners, purposes, lifecycle and X-Road status, security metadata, documents, and data files.
 ---
 
 # Public-Sector IT Systems (RIHA)
 
-## Use when
-- You need official registry metadata on state information systems.
-- You need system-owner and interoperability context.
+## Access
 
-## Avoid when
-- You need runtime operational logs rather than registry metadata.
+- Frontend: `https://www.riha.ee/`
+- Systems API: `GET https://www.riha.ee/api/v1/systems`
+- Classifiers: `GET https://www.riha.ee/api/v1/environment/classifiers`
+- Public JSON; no login is required for these endpoints.
 
-## Inputs
-- System keywords, institution, domain.
+## Retrieve
 
-## Outputs
-- RIHA system metadata list with links.
+Use `page` (zero-based) and `size` on `/api/v1/systems`, for example:
 
-## Primary endpoint
-- Search page: https://riha.eesti.ee/riha/main/infSystem/search
+`https://www.riha.ee/api/v1/systems?page=0&size=100`
 
-## Workflow
-1. Search systems by institution/topic.
-2. Extract system name, owner, purpose, and status metadata.
-3. Capture links to related documentation where available.
-4. Return normalized catalog table.
+The response contains `totalElements`, `content`, `size`, `page`, and `totalPages`. Page until `page + 1 == totalPages` when a full snapshot is required.
 
-## Human setup (when needed)
-- If detailed records require manual expansion, guide user through selecting records and sharing links/screenshots.
+Each row has a numeric `id`, request/approval metadata, and `details`. Important `details` fields include:
 
-## Quality checks
-- Preserve unique system IDs and owner fields.
-- Separate active vs historical/deprecated records.
+- `name`, `uuid`, `short_name`, `purpose`, and `homepage`
+- `owner.code` and `owner.name`
+- `meta.system_status`, `meta.x_road_status`, creation/update timestamps, and development status
+- `topics`, `security`, `documents`, `data_files`, `stored_data`, and `legislations`
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://riha.eesti.ee/riha/main/infSystem/search (HTTP 200, text/html;charset=UTF-8, file links detected: 0)
+Fetch `/api/v1/environment/classifiers` to map lifecycle, X-Road, security, document, relation, and legislation codes to Estonian labels.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Return
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Preserve RIHA `id`, UUID, short name, owner code/name, statuses with timestamps, purpose, topics, security metadata, and source URL.
+- Keep documents, data files, stored data, and legislation as arrays.
+- Include page parameters, `totalElements`, and retrieval time.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Limits
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- RIHA includes finished, establishing, private-owner, and legacy systems; filter deliberately rather than assuming every row is an active state system.
+- Registry metadata may be stale; preserve `meta.update_timestamp`.
+- `file://<uuid>` document links are RIHA-managed identifiers, not local filesystem paths.
+
+## Verify
+
+- Require HTTP 200 JSON with nonempty `content`, integer paging metadata, and nested `details.name`, `details.owner`, and `details.meta` fields.
+- Reject the Angular HTML shell or the legacy `riha.eesti.ee/riha/main/infSystem/search` redirect as data.

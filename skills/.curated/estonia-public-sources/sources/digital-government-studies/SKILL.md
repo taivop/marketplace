@@ -1,57 +1,40 @@
 ---
 name: digital-government-studies
-description: Query RIA studies, analyses, and overviews for digital-government operational evidence and policy context.
+description: Retrieve RIA's categorized studies, analyses, cryptography reviews, cyber-security reports, and institutional overviews from its embedded publication tables.
 ---
 
-# Digital Government Studies (RIA)
+# RIA Studies and Analyses
 
-## Use when
-- You need official studies/analyses on state digital systems and governance.
-- You need contextual evidence for operational-government assessments.
+## Access
 
-## Avoid when
-- You need transactional system data instead of analytical publications.
+- Index: `https://www.ria.ee/en/authority-news-and-contact/news-media-contact/studies-analyses-overviews`
+- Public server-rendered HTML with embedded JSON tables and direct file links.
 
-## Inputs
-- Topic keywords and date range.
+## Retrieve
 
-## Outputs
-- Publication index with metadata and links.
+Fetch the page and parse each `<script type="application/json" id="datatable-...">` block. Each table row contains rendered HTML for:
 
-## Primary endpoint
-- Studies/analyses page: https://www.ria.ee/en/authority-news-and-contact/news-media-contact/studies-analyses-overviews
+1. document/reference name and URL
+2. entry date
+3. download/view URL
 
-## Workflow
-1. Collect study/overview entries by topic/date.
-2. Extract titles, dates, and downloadable links.
-3. Tag each entry by domain (cyber, services, infrastructure, etc.).
-4. Return structured publication table.
+Parse those HTML fragments with an HTML parser, not a regular expression. Keep the table's surrounding heading as the category. Categories include studies/analyses, cryptographic algorithms, cyber-security annual reports, and RIA overviews/yearbooks.
 
-## Human setup (when needed)
-- If files are embedded behind UI components, guide user through download steps and continue from local files.
+The `/en/download_all_files/<id>` links are category-level browser helpers. Prefer the direct file URL from each JSON row when fetching one publication.
 
-## Quality checks
-- Keep publication date and source institution.
-- Avoid mixing RIA studies with unrelated news posts.
+## Return
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.ria.ee/en/authority-news-and-contact/news-media-contact/studies-analyses-overviews (HTTP 200, text/html;, file links detected: 1)
+- Return title, category, entry date, file/reference type, direct URL, file size when shown, language, and retrieval time.
+- Preserve web-publication and PDF variants as separate records when both exist.
+- Extract report contents only after selecting the relevant publication.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- This is a publication catalog, not a metric API; data inside reports requires document extraction.
+- Entry date can differ from the report's coverage year.
+- Some categories overlap the dedicated cyber-situation recipe; use that recipe when the question is specifically about incident trends.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require multiple datatable JSON blocks, parseable rows, dates, and direct RIA PDF/reference URLs.
+- Require selected PDF files to begin `%PDF-`; reject navigation and category download icons as publications.

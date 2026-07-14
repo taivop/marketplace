@@ -367,6 +367,79 @@ def state_ports() -> None:
     } <= ports[0].keys()
 
 
+def riha() -> None:
+    data = fetch_json("https://www.riha.ee/api/v1/systems?page=0&size=2")
+    assert isinstance(data, dict) and data.get("content")
+    assert {"totalElements", "size", "page", "totalPages"} <= data.keys()
+    details = data["content"][0].get("details", {})
+    assert {"name", "uuid", "owner", "meta", "purpose"} <= details.keys()
+
+
+def x_road() -> None:
+    current = fetch_json("https://x-tee.ee/stats/EE/environmentData.json")
+    assert isinstance(current, dict) and current.get("instanceIdentifier") == "EE"
+    assert re.fullmatch(r"20\d{2}-\d{2}-\d{2}", current.get("date", ""))
+    assert all(current.get(key, 0) > 0 for key in ("members", "subsystems", "securityServers"))
+    assert current.get("memberClasses")
+
+    history = fetch_json("https://x-tee.ee/stats/EE/history.json")
+    assert isinstance(history, list) and len(history) >= 12
+    assert {"date", "members", "subsystems", "securityServers"} <= history[-1].keys()
+
+
+def cyber_incidents() -> None:
+    page_url = (
+        "https://www.ria.ee/en/cyber-security/cyberspace-analysis-and-prevention/"
+        "situation-cyberspace"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert "Monthly summaries 2026" in text and "Quarterly Assessments 2023" in text
+    assert "Cyber Security in Estonia 2026" in text
+    pdf_links = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    situation_pdfs = [link for link in pdf_links if "situation" in link.lower()]
+    assert len(situation_pdfs) >= 12
+    pdf, pdf_type = fetch(urljoin(page_url, situation_pdfs[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def ria_studies() -> None:
+    page_url = (
+        "https://www.ria.ee/en/authority-news-and-contact/news-media-contact/"
+        "studies-analyses-overviews"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html"
+    assert len(re.findall(r'id="datatable-[^"]+"', text)) >= 3
+    encoded_links = re.findall(
+        r'https:\\/\\/www\.ria\.ee\\/[^" ]+\.pdf',
+        text,
+    )
+    pdf_links = [link.replace(r"\/", "/") for link in encoded_links]
+    assert len(set(pdf_links)) >= 10
+    pdf, pdf_type = fetch(pdf_links[0], limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def lobby_meetings() -> None:
+    page_url = (
+        "https://www.riigikantselei.ee/asutus-uudised-ja-kontakt/lobitegevus/"
+        "lobistidega-kohtumised"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.xlsx[^"]*)"', text, re.IGNORECASE)
+    assert content_type == "text/html" and len(links) >= 4
+    workbook, workbook_type = fetch(urljoin(page_url, links[0]), limit=4)
+    assert workbook_type in {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+    }
+    assert workbook == b"PK\x03\x04"
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -430,6 +503,8 @@ CHECKS: dict[str, Callable[[], None]] = {
     "bank-of-statistics": bank,
     "business-register-open-data": business_register,
     "communicable-disease-bulletins": communicable_diseases,
+    "cyber-incidents-cert-ee": cyber_incidents,
+    "digital-government-studies": ria_studies,
     "election-results-data": elections,
     "energy-data": energy,
     "food-business-approvals": food_businesses,
@@ -438,12 +513,14 @@ CHECKS: dict[str, Callable[[], None]] = {
     "healthcare-professionals-register": healthcare_professionals,
     "legal-acts-data": legal_acts,
     "legislation-workflow-eis": legislation_workflow,
+    "lobby-meetings": lobby_meetings,
     "marital-property-register": marital_property,
     "maritime-economy-statistics": maritime_economy,
     "ministry-document-registries": ministry_documents,
     "muis-open-data": muis,
     "open-data": open_data,
     "public-finance-data": public_finance,
+    "public-sector-it-systems-riha": riha,
     "riigikogu-open-data": riigikogu,
     "statistics-api": statistics,
     "state-ownership-data": state_ownership,
@@ -454,6 +531,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "transport-traffic-data": transport,
     "vaccination-statistics": vaccinations,
     "weather-data": weather,
+    "x-road-usage-statistics": x_road,
 }
 
 
