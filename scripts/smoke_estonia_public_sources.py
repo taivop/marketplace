@@ -1177,6 +1177,163 @@ def development_cooperation() -> None:
     assert len(lines) > 2 and any('="2025"' in line for line in lines[2:])
 
 
+def civil_service_pay() -> None:
+    page_url = (
+        "https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/"
+        "avalik-teenistus/palgakorraldus"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    xlsx = re.findall(r'href="([^"]+\.xlsx[^"]*)"', text, re.IGNORECASE)
+    pdfs = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    assert content_type == "text/html" and xlsx and len(pdfs) >= 4
+    assert "palkade avalikustamise juhend" in text.lower()
+    workbook, workbook_type = fetch(urljoin(page_url, xlsx[0]), limit=4)
+    assert workbook_type == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert workbook == b"PK\x03\x04"
+    pdf, pdf_type = fetch(urljoin(page_url, pdfs[0]), limit=5)
+    assert pdf_type == "application/pdf" and pdf == b"%PDF-"
+
+
+def public_sector_statistics() -> None:
+    page_url = (
+        "https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/"
+        "riigihaldus/avaliku-sektori-statistika"
+    )
+    body, content_type = fetch_with_curl(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    xlsx = re.findall(r'href="([^"]+\.xlsx[^"]*)"', text, re.IGNORECASE)
+    assert content_type == "text/html" and len(xlsx) >= 3
+    assert "Ametnike põhipalgad" in text and "Avaliku sektori asutused" in text
+    assert text.count("https://app.powerbi.com/view?") >= 3
+    workbook, workbook_type = fetch_with_curl(
+        urljoin(page_url, xlsx[0]),
+        headers={"Referer": page_url},
+    )
+    assert workbook_type == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert workbook.startswith(b"PK\x03\x04")
+
+
+def health_insurance_reports() -> None:
+    page_url = "https://www.tervisekassa.ee/en/organisation/annual-reports"
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.pdf[^"]*)"', text, re.IGNORECASE)
+    years = set(re.findall(r">(20\d{2})</a>", text))
+    assert content_type == "text/html" and len(links) >= 20
+    assert len(years) >= 20
+    pdf, pdf_type = fetch(urljoin(page_url, links[0]), limit=5)
+    assert pdf_type in {"application/pdf", "application/octet-stream"}
+    assert pdf == b"%PDF-"
+
+
+def health_statistics() -> None:
+    table_url = (
+        "https://statistika.tai.ee/api/v1/et/Andmebaas/"
+        "01Rahvastik/02Synnid/SR001.px"
+    )
+    metadata = fetch_json(table_url)
+    assert isinstance(metadata, dict) and metadata.get("title") == "SR001: Sünnid"
+    variables = metadata.get("variables", [])
+    assert [item.get("code") for item in variables] == ["Aasta", "Elulisus"]
+
+    payload = {
+        "query": [
+            {
+                "code": "Aasta",
+                "selection": {"filter": "item", "values": ["2025"]},
+            },
+            {
+                "code": "Elulisus",
+                "selection": {"filter": "item", "values": ["1"]},
+            },
+        ],
+        "response": {"format": "json-stat2"},
+    }
+    data = fetch_json(
+        table_url,
+        data=json.dumps(payload).encode(),
+        headers={"Content-Type": "application/json"},
+    )
+    assert isinstance(data, dict) and data.get("class") == "dataset"
+    assert data.get("id") == ["ContentsCode", "Aasta", "Elulisus"]
+    assert data.get("size") == [1, 1, 1] and len(data.get("value", [])) == 1
+    assert data.get("source") and data.get("note")
+
+
+def tehik_covid_open_data() -> None:
+    root_url = "https://rest-avaandmed.tehik.ee/covid19/"
+    body, content_type = fetch(root_url)
+    schema = json.loads(body)
+    assert content_type in {"application/json", "application/openapi+json"}
+    paths = schema.get("paths", {})
+    assert "/opendata_covid19_hospitalization" in paths
+    assert (
+        "/opendata_covid19_riskgroup_vaccination_season_location_agegroup"
+        in paths
+    )
+
+    data = fetch_json(
+        root_url
+        + "opendata_covid19_hospitalization?Valid=eq.true&"
+        "order=StatisticsWeek.desc&limit=2"
+    )
+    assert isinstance(data, list) and data
+    assert {
+        "StatisticsWeek",
+        "HospitalizationCount",
+        "Valid",
+        "ModifiedAt",
+    } <= data[0].keys()
+    assert data[0]["Valid"] is True
+
+
+def social_insurance_statistics() -> None:
+    page_url = (
+        "https://www.sotsiaalkindlustusamet.ee/asutus-uudised-ja-kontakt/"
+        "praktiline-teave/statistika"
+    )
+    body, content_type = fetch(page_url)
+    text = unescape(body.decode("utf-8", "replace"))
+    links = re.findall(r'href="([^"]+\.xlsx[^"]*)"', text, re.IGNORECASE)
+    rsk = [link for link in links if "RSK_koond" in link]
+    assert content_type == "text/html" and len(links) >= 50 and rsk
+    assert "Riiklik sotsiaalkindlustus" in text
+    workbook, workbook_type = fetch(urljoin(page_url, rsk[0]), limit=4)
+    assert workbook_type == (
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+    assert workbook == b"PK\x03\x04"
+
+
+def unemployment_statistics() -> None:
+    metadata_url = (
+        "https://andmed.eesti.ee/api/datasets/slug/registreeritud-tootud"
+    )
+    headers = {"Origin": "https://andmed.eesti.ee"}
+    data = fetch_json(metadata_url, headers=headers)
+    assert isinstance(data, dict) and data.get("slug") == "registreeritud-tootud"
+    assert data.get("organization", {}).get("slug") == "eesti-tootukassa"
+    distributions = data.get("distributions", [])
+    assert len(distributions) >= 10
+    xlsx = next(item for item in distributions if item.get("format") == "XLSX")
+    assert xlsx.get("accessUrls") and int(xlsx.get("byteSize", 0)) > 10_000
+    workbook, workbook_type = fetch(
+        xlsx["accessUrls"][0],
+        headers=headers,
+        limit=4,
+    )
+    assert workbook_type in {
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "application/octet-stream",
+    }
+    assert workbook == b"PK\x03\x04"
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -1242,6 +1399,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "aviation-safety-reports": aviation_reports,
     "bank-of-statistics": bank,
     "business-register-open-data": business_register,
+    "civil-service-pay-governance": civil_service_pay,
     "communicable-disease-bulletins": communicable_diseases,
     "consumer-technical-regulator-decisions": consumer_decisions,
     "construction-register": construction_register,
@@ -1265,6 +1423,9 @@ CHECKS: dict[str, Callable[[], None]] = {
     "government-journal-records": government_journal,
     "government-session-agendas": government_agendas,
     "health-supervision-decisions": health_supervision,
+    "health-insurance-fund-reports": health_insurance_reports,
+    "health-statistics": health_statistics,
+    "health-welfare-open-data": tehik_covid_open_data,
     "healthcare-professionals-register": healthcare_professionals,
     "legal-acts-data": legal_acts,
     "legislation-workflow-eis": legislation_workflow,
@@ -1283,9 +1444,11 @@ CHECKS: dict[str, Callable[[], None]] = {
     "planning-decisions": planning_register,
     "prison-annual-reviews": prison_reviews,
     "public-finance-data": public_finance,
+    "public-sector-statistics-fin": public_sector_statistics,
     "public-sector-it-systems-riha": riha,
     "riigikogu-open-data": riigikogu,
     "riigiteataja-draft-acts": draft_acts,
+    "social-insurance-statistics": social_insurance_statistics,
     "statistics-api": statistics,
     "strategic-development-documents-registry": strategic_documents,
     "state-ownership-data": state_ownership,
@@ -1296,6 +1459,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "tartu-document-register": tartu_documents,
     "tax-customs-data": tax_customs,
     "transport-traffic-data": transport,
+    "unemployment-statistics": unemployment_statistics,
     "vaccination-statistics": vaccinations,
     "weather-data": weather,
     "x-road-usage-statistics": x_road,

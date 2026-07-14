@@ -1,57 +1,31 @@
 ---
 name: health-insurance-fund-reports
-description: Use Estonian Health Insurance Fund annual reports for financing, service volumes, and system performance indicators.
+description: Download Estonian Health Insurance Fund annual reports by year for official financing, service-volume, and system-performance evidence.
 ---
 
-# Health Insurance Fund Reports
+# Health Insurance Fund Annual Reports
 
-## Use when
-- You need annual financial and service indicators from Tervisekassa.
-- You need official health insurance system performance context.
+## Access
 
-## Avoid when
-- You need disease-incidence surveillance data.
+- English index: `https://www.tervisekassa.ee/en/organisation/annual-reports`
+- Each year label links directly to a PDF; no authentication is required.
 
-## Inputs
-- Reporting year and metric scope.
+## Retrieve
 
-## Outputs
-- Structured annual report indicators and metadata.
+1. Fetch the index and parse year-labeled `.pdf` anchors.
+2. Select the requested year from the anchor text, then resolve its URL against the index.
+3. Download and extract the PDF while retaining page numbers and table headings.
 
-## Primary endpoints
-- Annual reports: https://www.tervisekassa.ee/en/organisation/annual-reports
+## Return
 
-## Workflow
-1. Retrieve selected annual reports.
-2. Extract financing, service, and utilization metrics.
-3. Normalize indicators across years.
-4. Return analysis-ready dataset with definitions.
+Return reporting year, report URL, retrieval time, page/table reference, indicator label, value, unit, accounting basis, and any budget/actual distinction.
 
-## Human setup (when needed)
-- If reports require manual download, guide the user through download and continue from files.
+## Limits
 
-## Quality checks
-- Distinguish budgeted vs realized values.
-- Keep indicator units and accounting basis.
+- The English archive currently trails the current calendar year; report availability is determined by index links.
+- Older files may use the former `haigekassa.ee` host but remain official archive links.
+- Annual-report definitions and organizational names can change across years.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.tervisekassa.ee/en/organisation/annual-reports (HTTP 200, text/html;, file links detected: 24)
+## Verify
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
-
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require a year-labeled index entry and `%PDF-` signature. Cite the exact report page for every extracted value.

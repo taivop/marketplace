@@ -1,57 +1,33 @@
 ---
 name: unemployment-statistics
-description: Query Estonian Unemployment Insurance Fund statistics and studies for labor-market, unemployment, and employment-service indicators.
+description: Retrieve Estonian Unemployment Insurance Fund datasets and XLSX distributions through the national open-data catalog API.
 ---
 
-# Unemployment Statistics (Töötukassa)
+# Unemployment Fund Statistics
 
-## Use when
-- You need unemployment and labor-market indicators from Töötukassa.
-- You need employment-service trend context.
+## Access
 
-## Avoid when
-- You only need macro labor indicators already in Stats Estonia tables.
+- Dataset chooser: `https://andmed.eesti.ee/information-holders/eesti-tootukassa`
+- Dataset metadata API: `https://andmed.eesti.ee/api/datasets/slug/{slug}`
+- Send a browser-like `User-Agent` and `Origin: https://andmed.eesti.ee` if the API edge rejects a bare client.
 
-## Inputs
-- Period, region, demographic scope, and indicator set.
+## Retrieve
 
-## Outputs
-- Unemployment/labor dataset and trend summaries.
+1. Use the chooser's 17 dataset links to select the subject and copy its slug. Subjects include registered unemployment, daily registered unemployment, vacancies, services, benefits, work-ability assessment, layoffs, work experience, and skills.
+2. GET `api/datasets/slug/{slug}`. For registered unemployment, use `registreeritud-tootud`.
+3. Read `distributions`; select by `titleEt`, `format`, and coverage rather than array position.
+4. Download the chosen URL in `accessUrls`. These API URLs redirect to short-lived signed object-storage URLs, so do not persist the redirect target.
 
-## Primary endpoints
-- Statistics and studies: https://www.tootukassa.ee/et/statistika-ja-uuringud
+## Return
 
-## Workflow
-1. Locate target indicator publication/table.
-2. Extract period and regional dimensions.
-3. Normalize metric definitions and units.
-4. Return analysis-ready table with metadata notes.
+Preserve dataset slug/title/description, organization, temporal coverage, update time, distribution title, format, byte size, license, stable `accessUrls` URL, retrieval time, and original workbook headers.
 
-## Human setup (when needed)
-- If data must be downloaded manually from portal widgets, guide user through exact selections and continue from exported files.
+## Limits
 
-## Quality checks
-- Preserve indicator definitions per publication.
-- Distinguish stock vs flow metrics.
+- The obsolete `https://www.tootukassa.ee/et/statistika-ja-uuringud` route renders an error and must not be used.
+- A dataset can contain multiple XLSX distributions for different demographic or geographic cuts.
+- Distinguish month-end stocks, during-month flows, and daily snapshots from titles and headers.
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.tootukassa.ee/et/statistika-ja-uuringud (HTTP 200, text/html, file links detected: 0)
+## Verify
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
-
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require `organization.slug: "eesti-tootukassa"`, public completed metadata, at least one distribution, and a valid XLSX ZIP signature from its stable `accessUrls` endpoint.

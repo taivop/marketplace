@@ -1,57 +1,46 @@
 ---
 name: health-statistics
-description: Query Estonia Health Statistics database (TAI) for official health indicators, outcomes, and utilization metrics.
+description: Query the National Institute for Health Development PxWeb API for official Estonian health indicators and machine-readable multidimensional tables.
 ---
 
-# Estonia Health Statistics (TAI)
+# Estonia Health Statistics
 
-## Use when
-- You need official health indicators from TAI statistics database.
-- You need demographic or service-utilization breakdowns.
+## Access
 
-## Avoid when
-- You need patient-level records (not public).
+- API root: `https://statistika.tai.ee/api/v1/et/`
+- Database root: `https://statistika.tai.ee/api/v1/et/Andmebaas`
+- The path is case-sensitive. The public API requires no authentication.
 
-## Inputs
-- Indicator topic, geography, demographic cuts, and period.
+## Discover
 
-## Outputs
-- Extracted health indicator table with definitions.
+GET the database root, then append each list item's `id` while `type` is `l`. A table item has `type: "t"`, an `.px` `id`, title, and update timestamp. GET the complete table path to retrieve its dimension metadata.
 
-## Primary endpoint
-- Database: https://statistika.tai.ee/
+## Query
 
-## Workflow
-1. Locate indicator table and dimensions.
-2. Apply filters in the query interface.
-3. Export to machine-readable format.
-4. Clean labels and produce analysis-ready table.
+POST the standard PxWeb body to the same `.px` URL:
 
-## Human setup (when needed)
-- If export is browser-only, guide user through exact menu/filter/export actions and continue from the downloaded file.
+```json
+{
+  "query": [
+    {"code": "Aasta", "selection": {"filter": "item", "values": ["2025"]}},
+    {"code": "Elulisus", "selection": {"filter": "item", "values": ["1"]}}
+  ],
+  "response": {"format": "json-stat2"}
+}
+```
 
-## Quality checks
-- Confirm denominator/population base for rates.
-- Note methodology revisions and breaks in series.
+The example table is `Andmebaas/01Rahvastik/02Synnid/SR001.px`. Always GET metadata first and use its exact dimension codes and values.
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://statistika.tai.ee/ (HTTP 200, text/html;, file links detected: 0)
+## Return
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+Preserve table path/title, source, update timestamp, notes/methodology links, dimension codes and labels, units, selected categories, values, and retrieval time.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Limits
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- Public aggregates only; no patient-level records.
+- Table notes can define denominator changes, breaks, and mandatory caveats.
+- Keep missing/suppressed values distinct from zero.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Verify
+
+Require JSON-stat2 `class: "dataset"`, matching `id`/`size` dimensions, a value count equal to the product of `size`, and the table's source and notes.

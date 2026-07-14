@@ -1,58 +1,30 @@
 ---
 name: civil-service-pay-governance
-description: Retrieve civil-service pay governance records from Ministry of Finance, including guidance documents, salary disclosure templates, and related legal/policy materials.
+description: Retrieve Ministry of Finance civil-service pay guidance, job-evaluation material, disclosure instructions, and the current salary-disclosure template.
 ---
 
 # Civil Service Pay Governance
 
-## Use when
-- You need official public-sector pay-system governance material.
-- You need templates/guidance and annual disclosure files related to civil-service pay.
+## Access
 
-## Avoid when
-- You need only aggregated public-sector statistics tables (use public-sector statistics skill).
+- Index: `https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/avalik-teenistus/palgakorraldus`
+- No authentication is required; documents are direct PDF/XLSX links.
 
-## Inputs
-- Topic (`guidance`, `salary-disclosure`, `methodology`, `legal-context`).
-- Year.
+## Retrieve
 
-## Outputs
-- Source-linked list of governance documents and data templates.
+Fetch the index and parse anchors whose URLs end in `.pdf` or `.xlsx`. Keep the anchor text and nearby heading so guidance, higher-official salary calculations, disclosure instructions, and disclosure templates remain distinguishable.
 
-## Access reality statement
-- Access type: `download files`.
-- Verified on 2026-02-24.
-- Page provides direct PDF/XLSX downloads.
+For the annual template, choose the link labeled with the requested year and `põhipalgad vorm`. Its `Põhipalk` sheet contains the disclosure columns `Asutus`, `Struktuuriüksus`, `Ametikoht`, `Eesnimi`, `Perekonnanimi`, `Ametniku koormus ametikohal`, and `Põhipalk`.
 
-## Primary endpoints
-- Salary data (public sector statistics): https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/riigihaldus/avaliku-sektori-statistika#ametnike-palgaandmed
-- Pay governance page: https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/avalik-teenistus/palgakorraldus
+## Return
 
-## Retrieval workflow (reproducible)
-1. Open pay-governance page.
-2. Collect all linked files under `/sites/default/files/documents/...`.
-3. Classify each record by purpose (methodology handbook, memo, disclosure guide, template).
-4. Extract year/date from filename and nearby text.
-5. Return sorted record list with absolute URLs.
+Return the index URL, document title, direct URL, format, year/version from the label, document category, and retrieval time. Preserve the template's original Estonian headers.
 
-## Request/query contract
-- No auth required.
-- File retrieval is direct over HTTPS.
-- There is no documented API; extraction is from published file links.
+## Limits
 
-## Output schema expectations
-- `source_page_url`
-- `document_title`
-- `document_url`
-- `file_format`
-- `publication_or_version_year`
-- `document_category`
-- `notes`
+- The XLSX is a disclosure template, not the completed salary dataset. Use `public-sector-statistics-fin` for published salary records.
+- Guidance and methodology documents have independent version dates; do not infer that every file is annual.
 
-## Limits and caveats
-- Titles can be abbreviated and may require filename parsing for year/version.
-- Governance documents may reference frameworks published on other pages.
+## Verify
 
-## Verification hooks
-- Page contains files such as `Ametnike palkade avalikustamise juhend_2026.pdf` and `01.04.2026 põhipalgad vorm.xlsx`.
-- Methodological documents are available (e.g., `ametikohtade hindamise kasiraamat_2018.pdf`).
+Require direct PDF/XLSX signatures and, for the template, the `Põhipalk` sheet plus the expected disclosure columns.

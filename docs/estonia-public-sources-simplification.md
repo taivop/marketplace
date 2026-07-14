@@ -91,6 +91,8 @@ Funding and grants audit: retained four distinct project or award datasets. Repl
 
 Environment and land-use audit: removed the generic Environmental Portal topic wrapper because it did not identify a retrievable dataset beyond existing open-data, permit, weather, and geospatial routes. Rebuilt Environmental Board charge statistics around its discoverable XLSX workbook, the Forest Register and national planning register around their public JSON APIs, and the Cultural Monuments Register around its exact HTML search/detail contract.
 
+Administrative and social statistics audit: retained seven distinct sources but replaced generic discovery wrappers. Rebuilt TAI health statistics around its PxWeb API, narrowed TEHIK open data to its two live seasonal COVID-19 PostgREST datasets, and replaced the broken Unemployment Fund page with national-catalog metadata and distribution APIs. Reduced Finance Ministry, Health Insurance Fund, and Social Insurance Board recipes to exact file indexes, workbook semantics, and signature checks.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.
