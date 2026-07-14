@@ -65,6 +65,8 @@ Audited and smoke-covered in the first endpoint wave: Statistics Estonia, Bank o
 
 Second interface wave: merged food and feed operator lookups into the tested JVIS contract; merged OSALE consultation routing into EIS; removed duplicate OSALE RSS, PTA guidance, animal-keeper registration, and animal-disease guidance entries that do not independently retrieve records.
 
+Live primary-URL audit: removed dead Competition Authority, Data Protection Inspectorate, and police-statistics routes; closed VOLIS; three Labour Inspectorate routes that redirect to its homepage; and policy/authenticated-service wrappers for migration, archives, prosecution statistics, e-ship, and succession records.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

@@ -22,7 +22,6 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Party finance and party membership | `sources/party-funding-data`, `sources/political-party-membership` |
 | State audits/constitutional oversight | `sources/state-audit-reports`, `sources/ombudsman-opinions` |
 | Supreme Court and court case flows | `sources/supreme-court-judgments`, `sources/court-proceedings-data`, `sources/court-system-statistics` |
-| Prosecution and police operational context | `sources/prosecution-statistics`, `sources/police-operational-statistics` |
 | Justice case-flow analytics | `sources/e-file-statistics` |
 | Prison system annual operations | `sources/prison-annual-reviews` |
 | Official notices, insolvency announcements, summons | `sources/official-notices` |
@@ -49,27 +48,23 @@ This is the canonical routing catalog for both Codex and Claude. Every source re
 | Planning, construction, cadaster/geospatial | `sources/planning-decisions`, `sources/construction-register`, `sources/geospatial-open-data` |
 | Transport/traffic and energy system operations | `sources/transport-traffic-data`, `sources/energy-data` |
 | National public transport routes/stops and Peatus API | `sources/transport-traffic-data` |
-| Vehicle, aircraft, ship, and port registry checks | `sources/vehicle-background-check`, `sources/aircraft-register`, `sources/ship-registers`, `sources/state-port-register`, `sources/e-ship-register-rik` |
+| Vehicle, aircraft, ship, and port registry checks | `sources/vehicle-background-check`, `sources/aircraft-register`, `sources/ship-registers`, `sources/state-port-register` |
 | Published aviation safety reports | `sources/aviation-safety-reports` |
 | Maritime economy indicators and fairway dues | `sources/maritime-economy-statistics`, `sources/fairway-dues` |
 | Cyber incidents and digital government operations | `sources/cyber-incidents-cert-ee`, `sources/public-sector-it-systems-riha`, `sources/x-road-usage-statistics`, `sources/digital-government-studies` |
 | e-Residency operational dashboard metrics | `sources/e-residency-dashboard` |
-| Labour inspection statistics and enforcement | `sources/labour-inspectorate-statistics`, `sources/labour-inspectorate-enforcement` |
-| Labour dispute committee process and outcomes context | `sources/work-dispute-committee` |
-| Municipal operations (Tallinn/Tartu/VOLIS) | `sources/local-council-volis`, `sources/tallinn-open-data`, `sources/tallinn-legal-acts-register`, `sources/tallinn-council-documents`, `sources/tartu-open-data`, `sources/tartu-webaktid`, `sources/tartu-document-register` |
+| Municipal operations (Tallinn/Tartu) | `sources/tallinn-open-data`, `sources/tallinn-legal-acts-register`, `sources/tallinn-council-documents`, `sources/tartu-open-data`, `sources/tartu-webaktid`, `sources/tartu-document-register` |
 | Elections and political process outcomes | `sources/election-results-data` |
 | National Electoral Committee (VVK) decisions | `sources/election-results-data` |
 | Cultural heritage / monuments | `sources/cultural-heritage-register` |
 | Museum collections and objects (MuIS RDF) | `sources/muis-open-data` |
 | Cultural grants and allocation rounds | `sources/kultuurkapital-grants-data` |
-| Historical governance archives | `sources/national-archives-governance-records` |
 | Internal security annual reviews (KAPO) | `sources/internal-security-annual-reviews` |
-| Consumer, competition, data-protection, financial supervision enforcement | `sources/consumer-technical-regulator-decisions`, `sources/competition-authority-decisions`, `sources/data-protection-enforcement`, `sources/financial-supervision-decisions` |
+| Consumer and financial supervision enforcement | `sources/consumer-technical-regulator-decisions`, `sources/financial-supervision-decisions` |
 | State services catalog and public-service delivery | `sources/state-services-catalog` |
 | Rescue incidents and emergency operations | `sources/rescue-incident-data` |
-| Migration governance and published migration records | `sources/migration-management` |
 | Language-law supervision and annual activity reports | `sources/language-law-supervision` |
-| Civil-status and succession property registries | `sources/marital-property-register`, `sources/succession-register` |
+| Marital property registry | `sources/marital-property-register` |
 | Patent and trademark registers | `sources/patent-and-trademark-registers` |
 | Crime-policy statistical studies | `sources/crime-policy-statistics` |
 | Education registries and EHIS extracts | `sources/education-data` |
