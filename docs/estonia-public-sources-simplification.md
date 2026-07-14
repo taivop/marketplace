@@ -87,6 +87,8 @@ Enforcement and oversight audit: removed the Financial Supervision page that onl
 
 Public-register audit: removed the vehicle background check because every query requires reCAPTCHA v3. Rebuilt the aircraft table parser, EHR public building JSON search/detail calls, and MTR's cookie-and-CSRF search flow; narrowed aviation reports to their actual 2009-2015 archive. Replaced obsolete Patent Office filing URLs with the current invention browser and trademark/design JSON databases.
 
+Funding and grants audit: retained four distinct project or award datasets. Replaced the broken Structural Funds/manual-fallback recipe with RTK's public Nextcloud WebDAV workbook contract; rebuilt PRIA's tokenized recipient CSV and AKTA's session-backed project CSV flows; and reduced Kultuurkapital to its round index, HTML tables, heading context, and amount normalization. Removed the unrelated MFA policy-document catalog and stale RTK/Structural Funds entry pages from the data recipes.
+
 ### Phase 4: Keep the catalog healthy
 
 - [x] Run offline structure checks on every change.

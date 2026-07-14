@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import base64
 from html import unescape
 from http.cookiejar import CookieJar
 import json
@@ -949,6 +950,130 @@ def patent_registers() -> None:
     assert {"id", "applicationNumber", "currentStatus", "verbalElement"} <= design.keys()
 
 
+def pria_subsidies() -> None:
+    jar = CookieJar()
+    opener = build_opener(HTTPCookieProcessor(jar))
+    page_url = "https://www.pria.ee/toetused/toetusesaajad?year=2025"
+    request = Request(page_url, headers={"User-Agent": USER_AGENT})
+    with opener.open(request, timeout=45) as response:
+        page = unescape(response.read().decode("utf-8", "replace"))
+    match = re.search(r'href="([^"]*/download/file/PRIA_export_[^"]+\.csv[^"]*)"', page)
+    assert match and "year=2025" in match.group(1)
+
+    export_request = Request(
+        urljoin(page_url, match.group(1)),
+        headers={"User-Agent": USER_AGENT},
+    )
+    with opener.open(export_request, timeout=45) as response:
+        csv_text = response.read(4_000_000).decode("utf-8-sig", "replace")
+    lines = csv_text.splitlines()
+    assert lines[0] == "sep=;"
+    assert "Toetusesaaja nimi" in lines[1] and "Finantsaasta" in lines[1]
+    assert len(lines) > 2 and any('"2025"' in line for line in lines[2:])
+
+
+def eu_funded_projects() -> None:
+    credentials = base64.b64encode(b"Mig46PpedQosEam:").decode()
+    request = Request(
+        "https://pilv.rtk.ee/public.php/webdav/",
+        headers={
+            "User-Agent": USER_AGENT,
+            "Authorization": f"Basic {credentials}",
+            "Depth": "2",
+        },
+        method="PROPFIND",
+    )
+    with urlopen(request, timeout=45) as response:
+        assert response.status == 207
+        root = ET.fromstring(response.read(1_000_000))
+    responses = root.findall("{DAV:}response")
+    xlsx = []
+    for item in responses:
+        href = item.findtext("{DAV:}href", "")
+        content_type = item.findtext(".//{DAV:}getcontenttype", "")
+        length = item.findtext(".//{DAV:}getcontentlength", "0")
+        if href.endswith(".xlsx"):
+            xlsx.append((href, content_type, int(length)))
+    assert len(xlsx) >= 4
+    assert any("Toetatud%20projektide%20tabelid/" in href for href, _, _ in xlsx)
+    assert all(
+        content_type
+        == "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        and length > 10_000
+        for _, content_type, length in xlsx
+    )
+
+
+def kultuurkapital_grants() -> None:
+    index_url = "https://www.kulka.ee/avalik-teave/eraldused-voorude-kaupa"
+    body, content_type = fetch(index_url)
+    index = unescape(body.decode("utf-8", "replace"))
+    links = set(
+        re.findall(
+            r'href="(/avalik-teave/eraldused-voorude-kaupa/[^"#]+)',
+            index,
+        )
+    )
+    assert content_type == "text/html" and len(links) >= 20
+
+    round_url = urljoin(
+        index_url,
+        "/avalik-teave/eraldused-voorude-kaupa/2025-a-4-taotlusvoor",
+    )
+    body, content_type = fetch(round_url)
+    page = unescape(body.decode("utf-8", "replace"))
+    assert content_type == "text/html" and page.count("<table") >= 10
+    assert "Eralduse saaja" in page
+    assert "Kasutamise eesmärk" in page or "Eralduse eesmärk" in page
+    assert "Eraldatud summa" in page or ">Summa<" in page
+
+
+def development_cooperation() -> None:
+    jar = CookieJar()
+    opener = build_opener(HTTPCookieProcessor(jar))
+    search_url = "https://akta.mfa.ee/andmed_otsing.php?language=eng"
+    request = Request(search_url, headers={"User-Agent": USER_AGENT})
+    with opener.open(request, timeout=45) as response:
+        form = response.read().decode("utf-8", "replace")
+    match = re.search(r'name="_csrf_token" value="([^"]+)"', form)
+    assert match
+    payload = urlencode(
+        {
+            "_csrf_token": match.group(1),
+            "aasta_a": "2025",
+            "aasta_k": "2025",
+            "aastased_projektid": "0",
+            "kaasfinantseerija": "0",
+            "mitu_riiki": "1",
+            "mitu_arenguabi_liiki": "1",
+            "otsi": "Otsi",
+        }
+    ).encode()
+    search_request = Request(
+        search_url,
+        data=payload,
+        headers={
+            "User-Agent": USER_AGENT,
+            "Content-Type": "application/x-www-form-urlencoded",
+        },
+    )
+    with opener.open(search_request, timeout=45) as response:
+        result = response.read().decode("utf-8", "replace")
+        assert response.url.endswith("/andmed.php")
+    assert "andmed_vaata.php?id=" in result and ">2025<" in result
+
+    export_request = Request(
+        "https://akta.mfa.ee/andmed_csv.php",
+        headers={"User-Agent": USER_AGENT},
+    )
+    with opener.open(export_request, timeout=45) as response:
+        csv_text = response.read(4_000_000).decode("windows-1257")
+    lines = csv_text.splitlines()
+    assert "Aasta" in lines[0] and "Projekti nimi" in lines[0]
+    assert "Arvesseminev summa EUR" in lines[0]
+    assert len(lines) > 2 and any('="2025"' in line for line in lines[2:])
+
+
 def geospatial() -> None:
     body, _ = fetch(
         "https://kaart.maaamet.ee/wms/alus?SERVICE=WMS&REQUEST=GetCapabilities"
@@ -1009,6 +1134,7 @@ def muis() -> None:
 
 
 CHECKS: dict[str, Callable[[], None]] = {
+    "agricultural-subsidies-pria": pria_subsidies,
     "aircraft-register": aircraft_register,
     "aviation-safety-reports": aviation_reports,
     "bank-of-statistics": bank,
@@ -1024,6 +1150,7 @@ CHECKS: dict[str, Callable[[], None]] = {
     "election-results-data": elections,
     "energy-data": energy,
     "economic-activities-register-mtr": economic_activities,
+    "eu-funded-projects": eu_funded_projects,
     "environmental-permit-decisions": environmental_permits,
     "estonia-2035-action-plan": estonia_2035,
     "food-business-approvals": food_businesses,
@@ -1037,9 +1164,11 @@ CHECKS: dict[str, Callable[[], None]] = {
     "legislation-workflow-eis": legislation_workflow,
     "lobby-meetings": lobby_meetings,
     "language-law-supervision": language_supervision,
+    "kultuurkapital-grants-data": kultuurkapital_grants,
     "marital-property-register": marital_property,
     "maritime-economy-statistics": maritime_economy,
     "ministry-document-registries": ministry_documents,
+    "mfa-development-cooperation-aid": development_cooperation,
     "muis-open-data": muis,
     "open-data": open_data,
     "official-notices": official_notices,
