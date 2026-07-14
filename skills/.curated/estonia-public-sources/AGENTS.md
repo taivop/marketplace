@@ -1,6 +1,6 @@
 # Project Agent Notes
 
-For overall project purpose and structure, read `/Users/taivo/repos/public-agents/skills/.curated/estonia-public-sources/README.md` first.
+The package must work through both its Codex entry point (`SKILL.md`) and Claude command (`skills/query/SKILL.md`). Both route through `SOURCE_MAP.md`, which is the canonical source catalog.
 
 ## Source Inclusion Criteria
 
@@ -49,8 +49,4 @@ Drop (or do not add) a source skill when it fails the practical-access test:
 2. The workflow cannot be executed reliably by an LLM, even with human-guided clicks.
 3. The same coverage is already provided by another source with better practical access.
 
-When dropping a source, also remove its references from:
-
-1. `README.md` source index.
-2. `SOURCE_MAP.md` routing table.
-3. Root `SKILL.md` high-level index.
+When dropping a source, remove its references from `SOURCE_MAP.md`. Do not add source indexes or numeric source claims to `README.md`, root `SKILL.md`, or the Claude command.

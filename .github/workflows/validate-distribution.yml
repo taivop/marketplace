@@ -19,6 +19,9 @@ jobs:
       - name: Validate Codex skills
         run: python3 scripts/validate_codex_skills.py
 
+      - name: Validate Estonia public sources catalog
+        run: python3 scripts/validate_estonia_public_sources.py
+
       - name: Generate plugin manifests
         run: python3 scripts/generate_plugin_manifests.py
 
