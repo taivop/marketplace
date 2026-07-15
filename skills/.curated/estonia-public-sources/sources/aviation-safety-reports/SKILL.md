@@ -1,60 +1,30 @@
 ---
 name: aviation-safety-reports
-description: Use aviation safety report pages for official safety reporting outputs, trend context, and structured extraction of published materials.
+description: Fetch the Transport Administration's historical ANS and ATM safety oversight reports for 2009-2015.
 ---
 
 # Aviation Safety Reports
 
-## Use when
-- You need official aviation safety reporting outputs and trends.
-- You need structured extraction from published safety materials.
+## Access
 
-## Avoid when
-- You need aircraft registration records only.
+- Index: `https://www.transpordiamet.ee/en/aviation-and-aviation-safety/aviation-safety/reports`
+- Method: `GET`
+- Files: public PDFs linked under `ANS and ATM Annual Safety Oversight Reports`.
 
-## Access reality
-- Public access type: direct PDF file downloads from official reports page.
+## Retrieve
 
-## Inputs
-- Safety topic, period, and report scope.
+1. Fetch the index and collect PDF links inside the ANS/ATM report section.
+2. Resolve relative links against the index URL and download the requested editions.
+3. Extract claims with the report title, covered year, page, and PDF URL.
 
-## Outputs
-- Structured aviation safety report indicators and references.
+The index currently exposes reports for 2015, 2014, 2013, 2012, 2011, and 2009-2010. Discover links from the index instead of hard-coding file paths.
 
-## Primary endpoints
-- Reports page: https://www.transpordiamet.ee/en/aviation-and-aviation-safety/aviation-safety/reports
-- Example direct report files:
-  - https://www.transpordiamet.ee/sites/default/files/documents/2021-07/safety_oversight_annual_report_2015.pdf
-  - https://www.transpordiamet.ee/sites/default/files/documents/2021-07/safety_oversight_annual_report_2014.pdf
-  - https://www.transpordiamet.ee/sites/default/files/documents/2021-07/annual_safety_report_2013_1.pdf
+## Limits
 
-## Retrieval workflow
-1. Open reports page and collect all linked report PDFs.
-2. Download report files directly from `sites/default/files/documents/...` links.
-3. Extract publication year, scope, indicators, and recommendations.
-4. Return normalized metrics with per-metric source report citation.
+- This is a historical oversight archive, not an aviation-occurrence dataset or current safety dashboard.
+- Coverage stops at 2015 and is not annual after that date.
+- Tables and charts may require PDF layout-aware extraction.
 
-## Request contract
-- Files are served as public PDFs via direct GET.
-- No API is required for report retrieval in this source skill.
+## Verify
 
-## Output schema expectations
-- Keep at least:
-  - report title
-  - report year / edition
-  - indicator name and value (if numeric)
-  - unit and period
-  - recommendation or finding text (if requested)
-  - source PDF URL
-
-## Limits and caveats
-- Coverage on this page may be historical and not continuous to current year.
-- Metrics can be embedded in tables/images; extraction quality can vary by PDF layout.
-
-## Verification hooks
-- Verify each extracted metric is linked to one specific PDF URL and year.
-- Verify downloaded file content type is `application/pdf`.
-
-## Quality checks
-- Keep report edition/date with every extracted metric.
-- Distinguish incident counts from risk recommendations.
+Require the `ANS and ATM Annual Safety Oversight Reports` heading, at least six year-labelled PDF links, and `%PDF-` at the start of every downloaded file.

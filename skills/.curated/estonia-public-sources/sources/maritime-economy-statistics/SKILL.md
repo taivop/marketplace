@@ -1,57 +1,43 @@
 ---
 name: maritime-economy-statistics
-description: Use Transport Administration maritime economy statistics for shipping-sector indicators and maritime operations context.
+description: Download sector-level Estonian maritime economy company, revenue, maritime-share, and employment indicators from the official embedded Tableau workbook.
 ---
 
 # Maritime Economy Statistics
 
-## Use when
-- You need shipping/maritime economy indicators.
-- You need official maritime sector operations context.
+## Access
 
-## Avoid when
-- You only need port registry metadata.
+- Official page: `https://www.transpordiamet.ee/en/maritime-and-waterways/bringing-ships-under-estonian-flag/maritime-economy-statistics`
+- Direct CSV: `https://public.tableau.com/views/Surveyofmaritimeeconomy/THEIMPACTOFTHEMARITIMESECTORONTHEESTONIANECONOMY.csv?:showVizHome=no`
+- Public Tableau export; no login is required.
 
-## Inputs
-- Indicator scope, period, and maritime segment.
+## Retrieve
 
-## Outputs
-- Structured maritime economy indicators dataset.
+Fetch the CSV URL directly. The workbook and sheet names come from the official page's Tableau embed, so re-read that embed if Tableau returns a view error after a publisher update.
 
-## Primary endpoints
-- Maritime economy statistics: https://www.transpordiamet.ee/en/maritime-and-waterways/bringing-ships-under-estonian-flag/maritime-economy-statistics
+Important columns include:
 
-## Workflow
-1. Locate relevant maritime statistics tables/publications.
-2. Extract indicators by period/segment.
-3. Normalize category and unit definitions.
-4. Return trend-ready structured output.
+- `sektor` and `sektor detailne`
+- total company count and percent of all companies
+- total sales revenue
+- maritime sales revenue and maritime share
+- total employees
 
-## Human setup (when needed)
-- If indicators are in downloadable reports, guide user through retrieval and continue from files.
+Preserve the original Estonian headers. Normalize non-breaking spaces in formatted numbers and decimal commas only in additional analysis columns.
 
-## Quality checks
-- Preserve metric definitions and units.
-- Distinguish fleet, activity, and financial indicators.
+## Return
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.transpordiamet.ee/en/maritime-and-waterways/bringing-ships-under-estonian-flag/maritime-economy-statistics (HTTP 200, text/html;, file links detected: 1)
+- Return one row per detailed maritime sector with the original values, workbook URL, official-page URL, and retrieval time.
+- State the period shown by the workbook/dashboard; do not infer it from retrieval time.
+- Keep sector totals separate from detailed subsectors if both are exported.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Tableau's default CSV exports the active sheet, not every dashboard tab.
+- For another tab, inspect the official embed or Tableau view and export that sheet explicitly.
+- The dashboard is a survey/study output rather than a continuously updated administrative register.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 `text/csv`, multiple data rows, `sektor`, and company, revenue, and employee columns.
+- Reject Tableau HTML or an error page returned with HTTP 200.

@@ -1,59 +1,41 @@
 ---
 name: marital-property-register
-description: Use e-marital property register public service context for official lookup workflows and registry evidence extraction.
+description: Query public aggregate statistics from Estonia's Marital Property Register by period, card status, property regime, and source document.
 ---
 
-# Marital Property Register
+# Marital Property Register Statistics
 
-## Use when
-- You need official marital property register workflow/context.
-- You need structured extraction from publicly available registry outputs.
+## Access
 
-## Avoid when
-- You need private records not publicly accessible.
+- Form: `https://abieluvararegister.rik.ee/Statistika`
+- Results endpoint: `GET https://abieluvararegister.rik.ee/Statistika/Otsi`
+- Public aggregate HTML; no authentication is required. Individual register searches are a separate authenticated service and are outside this recipe.
 
-## Inputs
-- Query purpose, allowed identifiers, and legal context.
+## Retrieve
 
-## Outputs
-- Structured register outputs and access constraints metadata.
+Send `dd.mm.yyyy` dates as `SearchFilter.AlgusKp` and `SearchFilter.LoppKp`. Include one or more boolean category parameters:
 
-## Primary endpoints
-- Register search: https://abieluvararegister.rik.ee/
-- Register statistics: https://abieluvararegister.rik.ee/Statistika
-- Service info: https://www.rik.ee/en/other-services/e-marital-property-register
+- card status: `SearchFilter.Kehtivad`, `SearchFilter.Suletud`
+- regimes: `SearchFilter.VarasuhteLiik.VaralahutusStat`, `VarayhisusStat`, `VaraJuurdekasvuStat`, `ValisriigiOiguseStat`
+- documents: `SearchFilter.Dokumendid.AbiellumisAvaldus`, `Abieluvaraleping`, `Kohtulahend`, `Kooseluleping`, `MuuDokument`
 
-## Workflow
-1. Determine what output is publicly available.
-2. Execute lookup flow within allowed scope.
-3. Extract structured fields and legal references.
-4. Return output with access limitations.
+Prefix the last two groups with `SearchFilter.VarasuhteLiik.` or `SearchFilter.Dokumendid.` exactly as shown. Use `true` for selected values. A normal user agent plus `X-Requested-With: XMLHttpRequest` and a statistics-page referer reproduces the browser request.
 
-## Human setup (when needed)
-- If lookup needs authentication/role rights, walk user through the required steps and continue from resulting data.
+Example period: `01.01.2025` through `31.01.2025`, both card statuses, and all regime/document categories.
 
-## Quality checks
-- Clearly label public vs restricted data boundaries.
-- Preserve official registry references.
+## Return
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.rik.ee/en/other-services/e-marital-property-register (HTTP 200, text/html;, file links detected: 0)
+- Parse the result tables by their original row and column labels.
+- Preserve the period, regime/document category, total valid cards, total closed cards, cards opened in the period, and cards closed in the period.
+- Include the exact parameters, source URL, and retrieval time.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Results are aggregates, not person-level records.
+- The UI can export the displayed table through a temporary server-side file flow; parsing the HTML result avoids that stateful extra step.
+- Category labels are Estonian.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 `text/html` containing the requested period and the columns `Kehtivaid kaarte kokku` and `Suletud kaarte kokku`.
+- Require rows for multiple property regimes; reject the form page itself as a result.

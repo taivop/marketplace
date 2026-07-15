@@ -1,57 +1,37 @@
 ---
 name: economic-activities-register-mtr
-description: Query Estonia Economic Activities Register (MTR) for licensed activity records, operator details, and sector-specific authorization context.
+description: Search Estonia's legacy Economic Activities Register (MTR) for public operators, activity notices, and licences.
 ---
 
 # Economic Activities Register (MTR)
 
-## Use when
-- You need operator/license information from MTR.
-- You need activity-authorization context by sector.
+## Access
 
-## Avoid when
-- You only need broad business population snapshots.
+- Operator search form: `GET https://mtr.ttja.ee/juriidiline_isik?m=96`
+- Form submission: `POST https://mtr.ttja.ee/juriidiline_isik/filter/action`
+- Response: server-rendered HTML using a session cookie and CSRF token; no login is required for public searches.
 
-## Inputs
-- Company identifier, activity class, sector, and time scope.
+## Retrieve
 
-## Outputs
-- MTR activity-license records and normalized fields.
+1. Create one cookie-preserving HTTP session and fetch the search form.
+2. Extract `juriidiline_isik_filters[_csrf_token]`.
+3. Submit the form in the same session. Useful fields are:
+   - `juriidiline_isik_filters[nimi][text]`
+   - `juriidiline_isik_filters[registrikood][text]`
+   - `juriidiline_isik_filters[tegevusala_id]`
+   - `juriidiline_isik_filters[tegevusala_tyyp]`: `1` for notices or `2` for licences
+   - `juriidiline_isik_filters[valjund_valjad][]`: request `nimi`, `registrikood`, and any other output columns needed
+4. Follow the redirect to `/juriidiline_isik` and parse rows from `div.sf_admin_list`.
+5. Follow each row's `/juriidiline_isik/<id>` link. The detail page contains `Majandustegevusteated` and `Tegevusload` tables with validity and activity fields.
 
-## Primary endpoints
-- Register portal: https://mtr.ttja.ee/
+Preserve the operator name, registration code, MTR record number, activity, validity dates, current/archive state, and detail URL.
 
-## Workflow
-1. Select relevant search view in MTR.
-2. Filter by entity/activity class/time.
-3. Extract registration, status, and authorization details.
-4. Return structured table with status semantics.
+## Limits
 
-## Human setup (when needed)
-- If export is UI-only, walk the user through exact filters and export actions, then continue from the provided file.
+- Since 25 June 2025, notices and licences are being moved from MTR to `https://tarvik.ttja.ee/`; MTR alone is no longer guaranteed to be exhaustive for current activity.
+- The public form is stateful. A POST without the cookie and current CSRF token will not reproduce the search.
+- Use the dedicated notice (`/majandustegevusteade`) or licence (`/tegevusluba`) forms when the user asks for record-first rather than operator-first results; they use the same session/CSRF pattern.
 
-## Quality checks
-- Preserve original MTR reference identifiers.
-- Distinguish active, suspended, and terminated records.
+## Verify
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://mtr.ttja.ee/ (HTTP 200, text/html;, file links detected: 0)
-
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
-
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require the submitted filter value to reappear under `Kasutatud filtrid`, at least one result row containing both name and registration code, and a working `/juriidiline_isik/<id>` detail link.

@@ -1,62 +1,35 @@
 ---
 name: prison-annual-reviews
-description: Retrieve prison system annual reviews and continuously updated operational dashboard metrics from Vanglateenistus public pages.
+description: Retrieve Vanglateenistus annual visual reviews and public Fabric dashboards for current prison and probation indicators.
 ---
 
-# Prison Annual Reviews and Operational Stats
+# Prison Reviews and Operational Statistics
 
-## Use when
-- You need year-based prison service reports.
-- You need current operational indicator dashboard context between annual reports.
+## Access
 
-## Avoid when
-- You need person-level inmate records.
+- Annual visual reviews: `https://vanglateenistus.ee/meist/uudised-ja-arvud/aasta-ulevaated`
+- Current numeric overview: `https://vanglateenistus.ee/meist/uudised-ja-arvud/paevakohane-arvuline-ulevaade`
+- Public dashboard: `https://app.fabric.microsoft.com/view?r=eyJrIjoiNTg0YmZmMjAtN2FhZC00MDI3LWE2NTUtMTZiM2IwYTVlNzUzIiwidCI6ImY2MzQyZDcwLWRhYzEtNDYxNC04ZTFhLTQ3YjkxYzE2YjhkZiIsImMiOjl9`
 
-## Inputs
-- Year range.
-- Scope (`annual-reviews`, `current-dashboard`).
+## Retrieve
 
-## Outputs
-- Structured report list and/or dashboard-derived indicator extract.
+The annual page contains accordion sections by year. Recent reviews are sequences of infographic images under `/sites/default/files/...`; older sections may contain HTML tables or links to year-specific Power BI reports. Treat image text extraction as OCR and retain the image URL for every value.
 
-## Access reality statement
-- Access type: `download files` + `UI copy-only`.
-- Verified on 2026-02-24.
-- Legacy `vangla.ee/et/statistika` redirects; current data is on `vanglateenistus.ee` pages.
+The current overview embeds at least two Fabric reports, including operational indicators and prison-service events. Set and record every active dashboard filter before copying or exporting values. Capture the page's `Viimati uuendatud` date with the extract.
 
-## Primary endpoints
-- Annual reviews page: https://vanglateenistus.ee/meist/uudised-ja-arvud/aasta-ulevaated
-- Current numeric overview page: https://vanglateenistus.ee/meist/uudised-ja-arvud/paevakohane-arvuline-ulevaade
-- Embedded operational dashboard (PowerBI): https://app.fabric.microsoft.com/view?r=eyJrIjoiNTg0YmZmMjAtN2FhZC00MDI3LWE2NTUtMTZiM2IwYTVlNzUzIiwidCI6ImY2MzQyZDcwLWRhYzEtNDYxNC04ZTFhLTQ3YjkxYzE2YjhkZiIsImMiOjl9
+## Return
 
-## Retrieval workflow (reproducible)
-1. Open annual review page and collect each report title/date/download URL.
-2. Open numeric overview page and locate embedded dashboard iframe URL.
-3. Capture visible metric definitions and latest update text from the page.
-4. Extract dashboard values through UI copy/export where available.
-5. Return datasets labeled by source type (`annual_report`, `daily_dashboard`).
+- Preserve source type (`annual_image`, `annual_dashboard`, or `current_dashboard`), year/date, metric, value, unit, population/scope, active filters, image/report URL, page URL, and retrieval time.
+- Keep prisoner, detainee, probation, staffing, incident, and activity measures distinct.
 
-## Request/query contract
-- No public documented REST contract is exposed for prison stats.
-- Operational dashboard is embedded via iframe; extraction is UI-based unless direct export is exposed by the dashboard.
-- Track redirects from legacy domains when resolving user-provided old links.
+## Limits
 
-## Output schema expectations
-- `source_type`
-- `source_page_url`
-- `record_title` or `metric_name`
-- `record_date` or `last_updated`
-- `value`
-- `unit`
-- `download_or_view_url`
-- `notes`
+- No documented public REST contract is exposed. Dashboard and image schemas can change.
+- Recent annual reviews are images rather than machine-readable tables; OCR must be checked against the source image.
+- Dashboard definitions may differ from annual-review definitions. Do not merge series without confirming comparability.
+- `https://www.vangla.ee/et/statistika` is obsolete and redirects to the current site.
 
-## Limits and caveats
-- Dashboard schema may change without versioned API documentation.
-- Historical comparability may differ between annual-report tables and current dashboard calculations.
-- Some values are available only visually in the embedded BI view.
+## Verify
 
-## Verification hooks
-- `https://www.vangla.ee/et/statistika` returns redirect to `https://vanglateenistus.ee/`.
-- Numeric overview page includes iframe to `app.fabric.microsoft.com/view?...`.
-- Page includes `Viimati uuendatud` text (observed date field on the page).
+- Require the annual page to contain multiple year accordions and `/sites/default/files/` review images or year-specific dashboard links.
+- Require the current page to contain public Fabric iframe URLs and a `Viimati uuendatud` date. Reject a blank dashboard shell as retrieved data.

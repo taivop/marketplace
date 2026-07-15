@@ -1,59 +1,36 @@
 ---
 name: public-sector-statistics-fin
-description: Retrieve Ministry of Finance public-sector statistics records, including institution counts, salary overviews, and embedded BI dashboards.
+description: Download Ministry of Finance public-sector institution, civil-service salary, survey, and annual-report files from the official statistics index.
 ---
 
-# Public-Sector Statistics (fin.ee)
+# Public-Sector Statistics
 
-## Use when
-- You need public-sector institution/workforce/payroll context published by Ministry of Finance.
-- You need downloadable XLSX/PDF records plus official dashboard links.
+## Access
 
-## Avoid when
-- You need legally binding pay rules text only (use civil-service pay governance skill).
+- Index: `https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/riigihaldus/avaliku-sektori-statistika`
+- The page contains direct XLSX/PDF links and optional Power BI dashboards; no authentication is required.
 
-## Inputs
-- Target year.
-- Subtopic (`institutions`, `salary-overview`, `survey`, `dashboard`).
+## Retrieve
 
-## Outputs
-- Structured record list with downloadable files and dashboard references.
+Fetch the index and select by anchor label, not a dated storage URL:
 
-## Access reality statement
-- Access type: `download files` + `UI copy-only`.
-- Verified on 2026-02-24.
-- Page exposes multiple direct files and embedded PowerBI links.
+- `Avaliku sektori asutused ...`: institution list XLSX.
+- `Ametnike põhipalgad ... ja kogupalgad ...`: completed salary disclosure XLSX.
+- `palgauuring`: salary survey PDFs.
+- `Avaliku teenistuse aasta...`: annual-report PDFs.
 
-## Primary endpoints
-- Public-sector statistics page: https://www.fin.ee/riigihaldus-ja-avalik-teenistus-kinnisvara/riigihaldus/avaliku-sektori-statistika
+The salary workbook separates local-government and state records and separates snapshot base salary from prior-year total salary. Read sheet-specific notes before locating the header row.
 
-## Retrieval workflow (reproducible)
-1. Open page and collect direct file links (`/sites/default/files/documents/...`).
-2. Parse title and file extension to classify records (XLSX, PDF).
-3. Capture embedded dashboard URLs (`app.powerbi.com/...`, if present).
-4. Extract publication context from surrounding text/date markers.
-5. Return normalized records with source URL and file URL.
+## Return
 
-## Request/query contract
-- No auth required for listed page/files.
-- Files are direct HTTP downloads from fin.ee storage paths.
-- Dashboard links are UI embed URLs without documented public query contract.
+Return the index and file URLs, anchor title, file type, stated years, sheet name, original headers, retrieval time, and extracted records. Keep `põhipalk` snapshot dates separate from `kogupalk` earning years.
 
-## Output schema expectations
-- `source_page_url`
-- `record_title`
-- `record_url`
-- `record_type`
-- `year`
-- `publication_date` (if present)
-- `topic`
+## Limits
 
-## Limits and caveats
-- Page mixes institution, salary, and survey outputs in one place.
-- Some dashboard links may not provide direct CSV exports.
-- Estonian terminology requires consistent mapping in downstream analysis.
+- The page mixes datasets, reports, surveys, and dashboards. Do not treat every link as row-level statistics.
+- Salary sheets can begin with explanatory rows and corrections before the tabular header.
+- Power BI links are presentation views unless a separate export contract is verified.
 
-## Verification hooks
-- Page includes files such as `Avaliku_sektori_asutused_asutuse_liikide_loikes_juuli_2025.xlsx`.
-- Page includes files such as `Ametnike põhipalgad ... kogupalgad ... .xlsx`.
-- Page includes PowerBI embed URLs (`app.powerbi.com/view?...`).
+## Verify
+
+Require file signatures and expected workbook labels such as `Asutus`, `Ametikoht`, and `Põhipalk`; preserve correction notes attached to the selected sheet.

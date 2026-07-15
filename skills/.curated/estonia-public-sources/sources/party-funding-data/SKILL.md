@@ -1,59 +1,52 @@
 ---
 name: party-funding-data
-description: Query ERJK open data and finance report views for Estonian political party funding, revenues, expenditures, and transparency monitoring.
+description: Query the ERJK JSON API for Estonian political-party quarterly and election funding reports, receipts, expenses, donors, and suppliers.
 ---
 
 # Party Funding Data (ERJK)
 
 ## Use when
-- You need party revenue/expenditure data and financing transparency records.
-- You need reporting-period comparisons across parties.
+- You need party revenue, expenditure, donor, or supplier data.
+- You need quarterly or election-report comparisons across parties.
 
 ## Avoid when
-- You need party membership totals only.
+- You need party membership records; use `political-party-membership`.
 
-## Inputs
-- Party, period, report type, and grouping dimensions.
-
-## Outputs
-- Funding dataset and normalized period-party metrics.
-
-## Primary endpoints
-- Open data entry point: https://www.erjk.ee/en/open-data
-- Revenue reports view: https://www.erjk.ee/en/financing-reports/revenue-reports?period=show_all&period_to=&party=all&person=&group=111&quarter=&quarter_to=
+## Endpoints
+- OpenAPI YAML: https://www.erjk.ee/avaandmed/erjkapi.yaml
+- Parties: `https://erjk.ee/api/quarterly-reports/parties`
+- Party reports: `https://erjk.ee/api/quarterly-reports/quarters/{party_id}`
+- One report: `https://erjk.ee/api/quarterly-reports/{report_id}?report_type=receipts`
+- Receipt query: `https://erjk.ee/api/quarterly-reports/queries/receipts?party_id=159&category_id=all&period=2025&quarter=quarter`
+- Expense query: `https://erjk.ee/api/quarterly-reports/queries/expenses?party_id=159&category_id=all_by_group&period=2025&quarter=quarter`
+- Election events: `https://erjk.ee/api/events`
+- Classifiers: `https://erjk.ee/api/categories/receipts`, `https://erjk.ee/api/categories/expenses`
 
 ## Workflow
-1. Locate relevant ERJK open-data/report endpoint.
-2. Extract party-period financial fields.
-3. Normalize party names and reporting periods.
-4. Return structured funding table and caveats.
-
-## Human setup (when needed)
-- If data export is only available via web controls, guide user through filter/export steps and continue from file.
-
-## Quality checks
-- Distinguish revenue vs expenditure streams.
-- Preserve source period and report type metadata.
+1. Resolve `party_id`, category IDs, or election `event_id` from their list endpoints.
+2. Use aggregate query endpoints for comparisons; use report endpoints for record-level receipts or expenses.
+3. Preserve the exact query URL and return numeric amounts without silently rounding.
 
 ## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.erjk.ee/en/open-data (HTTP 200, text/html;, file links detected: 0)
-- https://www.erjk.ee/en/financing-reports/revenue-reports?period=show_all&period_to=&party=all&person=&group=111&quarter=&quarter_to= (HTTP 200, text/html;, file links detected: 0)
+- Public unauthenticated JSON API, verified 2026-07-14.
+- The 2025 receipt example returns party/category/quarter rows with `amount`, `period`, `party_id`, `party_name`, `category_id`, `category_name`, and `quarter`.
+- Requests may redirect from `/api/...` to `/et/api/...`; allow redirects.
 
 ## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- `report_type` is required on individual quarterly and election report endpoints and accepts `receipts` or `expenses`.
+- `party_id` accepts a numeric ID, `all`, or `all_sum` where documented.
+- `category_id` supports endpoint-specific aggregate values such as `all`, `all_by_group`, and `all_sum`.
+- `quarter=quarter` groups a selected year by quarter; `q1` through `q4` select quarter bounds.
+- The OpenAPI `period` enum is stale and stops at 2022; discover newer years from party report lists rather than rejecting them locally.
 
 ## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Preserve IDs, names, period, quarter, category, amount, report type, and the exact request URL.
+- Keep receipts and expenses separate.
 
 ## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- Party and category lists include inactive or historical values; do not treat every returned party as currently registered.
+- Amounts are JSON strings. Parse them as decimal values, not binary floats, when totals must reconcile.
 
 ## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require `application/json` and the expected ID/name fields on list endpoints.
+- For aggregate queries, require at least one row and preserve its period and party/category identifiers.

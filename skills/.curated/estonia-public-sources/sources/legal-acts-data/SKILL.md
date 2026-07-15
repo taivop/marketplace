@@ -1,59 +1,42 @@
 ---
 name: legal-acts-data
-description: Query Riigi Teataja legal acts API and related endpoints for Estonian legislation search, retrieval, and legal text linking.
+description: Search and retrieve official Estonian legislation through the Riigi Teataja legal-acts JSON API and linked act representations.
 ---
 
-# Estonia Legal Acts Data (Riigi Teataja)
+# Riigi Teataja Legal Acts
 
-## Use when
-- You need official legal acts, metadata, and structured legal search.
-- You need regulation references for compliance-aware analysis.
+## Access
 
-## Avoid when
-- You only need plain-language summaries without legal text retrieval.
+Public JSON search API and linked XML act texts. No authentication.
 
-## Inputs
-- Query terms, legal act type, effective-date constraints.
+## Retrieve
 
-## Outputs
-- Legal search results and retrieved act links/text references.
+Start with a bounded search:
 
-## Primary endpoints
-- Portal: https://www.riigiteataja.ee/
-- Search API example: `https://www.riigiteataja.ee/api/oigusakt_otsing/1/otsi?leht=1`
+```text
+GET https://www.riigiteataja.ee/api/oigusakt_otsing/1/otsi?leht=1&limiit=25&pealkiri=riigieelarve
+```
 
-## Workflow
-1. Query legal acts API with relevant search filters.
-2. Parse results and capture `url`/ID fields.
-3. Fetch referenced act representations as needed.
-4. Return legal dataset with citation-ready links.
+Useful query parameters include `leht` (page), `limiit` (page size), and `pealkiri` (title text). Add filters from the Riigi Teataja search UI only after confirming their exact URL names.
 
-## Human setup (when needed)
-- Usually none.
+The response contains:
 
-## Quality checks
-- Distinguish current vs historical validity periods.
-- Preserve original legal identifiers and publication context.
+- `staatus` and `paring`;
+- `metaandmed.kokku`, `metaandmed.leht`, and `metaandmed.limiit`;
+- `aktid`, including `globaalID`, `terviktekstID`, `pealkiri`, `liik`, `valjaandja`, `kehtivus`, `staatus`, and relative `url`.
 
-## Access reality
-- Public access type: API or structured endpoint access.
-- Verification run: 2026-02-24.
-- https://www.riigiteataja.ee/ (HTTP 200, text/html;charset=UTF-8, file links detected: 2)
-- https://www.riigiteataja.ee/api/oigusakt_otsing/1/otsi?leht=1` (HTTP 400, text/html;charset=utf-8, file links detected: 0)
+Resolve a returned `url`, such as `/akt/22451.xml`, against `https://www.riigiteataja.ee` to retrieve the official act representation.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Return
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+Preserve legal IDs, title, type, issuer, validity start/end, publication status, text type, act URL, search parameters, page metadata, and retrieval time. Clearly distinguish current and historical versions.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Limits
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- A broad unfiltered search is valid but returns historical as well as current acts.
+- Legal validity must be read from the returned version metadata, not inferred from search order.
+- Do not rewrite relative act URLs incorrectly; resolve them against the Riigi Teataja origin.
+
+## Verify
+
+Require HTTP 200 JSON, `staatus: OK`, integer pagination metadata, and a parseable `aktid` array. At least one returned act must contain `globaalID`, `pealkiri`, `kehtivus`, and `url` before reporting success.

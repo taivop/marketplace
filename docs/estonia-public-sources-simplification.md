@@ -1,0 +1,118 @@
+# Estonia Public Sources Simplification Plan
+
+## Goal
+
+Give Codex and Claude the shortest reliable path from an Estonian public-data question to an official record. Ship acquisition recipes, not an inventory of government topics.
+
+## Product contract
+
+A source belongs in the skill only when a fresh agent can retrieve a real public record without repeating source discovery. Each shipped source must provide:
+
+1. A working API request, direct download, or reproducible public browser/export path.
+2. The required query parameters or UI inputs.
+3. The expected response type and identifying fields.
+4. Source-specific limits such as authentication, pagination, language, or coverage.
+5. A semantic verification that distinguishes useful data from an HTML error page.
+
+Descriptive pages, authenticated services without public records, duplicate topic wrappers, and broken endpoints do not qualify.
+
+## Distribution constraints
+
+- Keep the package-level `SKILL.md` as the Codex entry point.
+- Keep `skills/query/SKILL.md` as the Claude slash-command entry point.
+- Keep distribution metadata in the package `SKILL.md` and regenerate Claude manifests after metadata changes.
+- Both entry points must use the same routing catalog and source recipes.
+
+## Target structure
+
+```text
+estonia-public-sources/
+├── SKILL.md                 # shared runtime policy and routing
+├── SOURCE_MAP.md            # canonical topic-to-recipe catalog
+├── skills/query/SKILL.md    # thin Claude command wrapper
+└── sources/<interface>/SKILL.md
+```
+
+The root skill, command wrapper, and README must not maintain separate source inventories or hard-code a source count.
+
+## Execution plan
+
+### Phase 1: Remove structural duplication
+
+- [x] Make `SOURCE_MAP.md` the canonical routing catalog.
+- [x] Reduce the root skill to shared routing, retrieval, and output rules.
+- [x] Keep the Claude command as a thin wrapper around the root skill.
+- [x] Remove the hand-maintained README source index and numeric source claims.
+- [x] Add validation for catalog references and nested source frontmatter.
+
+### Phase 2: Prune and merge
+
+- [x] Remove the clearest narrative, registration, and access-controlled non-sources.
+- [x] Merge Riigikogu agenda and stenogram routing into the Riigikogu API recipe.
+- [x] Group remaining entries by underlying technical interface.
+- [x] Merge duplicate wrappers that use the same API, dataset, or public application.
+- [x] Delete entries that cannot retrieve public records in a clean agent session.
+
+### Phase 3: Verify every surviving recipe
+
+- [x] Run every working request or browser path.
+- [x] Replace homepage-only endpoints and placeholder requests.
+- [x] Replace generic generated sections with exact request and response contracts.
+- [x] Add one content-level smoke check per source.
+- [x] Remove any source that cannot pass the practical-access test.
+
+Audited and smoke-covered in the first endpoint wave: Statistics Estonia, Bank of Estonia, Riigi Teataja, Riigikogu, Business Register, public finance, tax/customs, weather, Elering, Peatus, geospatial services, Tallinn open data, election results, the national open-data RSS catalog, and MuIS.
+
+Second interface wave: merged food and feed operator lookups into the tested JVIS contract; merged OSALE consultation routing into EIS; removed duplicate OSALE RSS, PTA guidance, animal-keeper registration, and animal-disease guidance entries that do not independently retrieve records.
+
+Live primary-URL audit: removed dead Competition Authority, Data Protection Inspectorate, and police-statistics routes; closed VOLIS; three Labour Inspectorate routes that redirect to its homepage; and policy/authenticated-service wrappers for migration, archives, prosecution statistics, e-ship, and succession records.
+
+Municipal interface audit: removed the obsolete Tartu WebAktid duplicate and replaced the Tartu document-register splash-page recipe with its actual searchable Lotus Notes view chooser and record-type contracts. Removed the Tartu open-data wrapper because the city page only forwards to the already tested national catalog.
+
+Ministry of Finance interface audit: removed procurement review and supervision procedure pages plus the incorrectly routed local-government benchmark wrapper. Rebuilt state ownership as a tested HTML-table contract for companies and foundations.
+
+RIK interface audit: removed the access-approved e-File statistics environment and authenticated/paid Land Register wrapper. Rebuilt the public marital-property aggregate statistics endpoint and ADR document-register form contracts with live checks.
+
+Transport Administration interface audit: removed fairway-dues and ship-registration guidance wrappers. Rebuilt maritime economy around the Tableau CSV export and State Port Register around its public settings, list, and detail APIs.
+
+Health Board interface audit: retained four distinct public datasets but replaced their generic wrappers with exact bulletin/precept file discovery, MEDRE JSON/XML API, and vaccination Tableau export contracts.
+
+RIA and Government Office interface audit: removed the duplicate/misdirected Government Office document-register wrapper. Replaced obsolete UI routes with RIHA and X-Road JSON contracts, and made RIA cyber/study publications and quarterly lobbying workbooks directly discoverable and testable.
+
+Government Office data audit: retained five distinct working sources. Replaced generic journal and cabinet-agenda wrappers with Lotus Notes XML and search-service JSON contracts, removed stale generated table IDs from strategy recipes, and added checks for the Power BI/file discovery paths.
+
+Justice and courts audit: retained seven distinct working sources. Replaced generic wrappers with Riigi Teataja decision, hearing, and draft JSON POST contracts; the Supreme Court server-rendered search; the Official Notices XML URI scheme; and exact court, prison, and crime-publication retrieval limits.
+
+Enforcement and oversight audit: removed the Financial Supervision page that only forwarded to the general court register. Rebuilt Consumer Disputes Committee decisions around the JVIS JSON/PDF contract, KOTKAS around its public POST forms, and the Language Board, National Audit Office, and Chancellor of Justice archives around their actual document indexes.
+
+Public-register audit: removed the vehicle background check because every query requires reCAPTCHA v3. Rebuilt the aircraft table parser, EHR public building JSON search/detail calls, and MTR's cookie-and-CSRF search flow; narrowed aviation reports to their actual 2009-2015 archive. Replaced obsolete Patent Office filing URLs with the current invention browser and trademark/design JSON databases.
+
+Funding and grants audit: retained four distinct project or award datasets. Replaced the broken Structural Funds/manual-fallback recipe with RTK's public Nextcloud WebDAV workbook contract; rebuilt PRIA's tokenized recipient CSV and AKTA's session-backed project CSV flows; and reduced Kultuurkapital to its round index, HTML tables, heading context, and amount normalization. Removed the unrelated MFA policy-document catalog and stale RTK/Structural Funds entry pages from the data recipes.
+
+Environment and land-use audit: removed the generic Environmental Portal topic wrapper because it did not identify a retrievable dataset beyond existing open-data, permit, weather, and geospatial routes. Rebuilt Environmental Board charge statistics around its discoverable XLSX workbook, the Forest Register and national planning register around their public JSON APIs, and the Cultural Monuments Register around its exact HTML search/detail contract.
+
+Administrative and social statistics audit: retained seven distinct sources but replaced generic discovery wrappers. Rebuilt TAI health statistics around its PxWeb API, narrowed TEHIK open data to its two live seasonal COVID-19 PostgREST datasets, and replaced the broken Unemployment Fund page with national-catalog metadata and distribution APIs. Reduced Finance Ministry, Health Insurance Fund, and Social Insurance Board recipes to exact file indexes, workbook semantics, and signature checks.
+
+Political-record audit: removed the duplicate Riigikogu draft-law webpage recipe and folded the tested draft search/detail endpoints into the existing parliamentary API contract. Replaced generic ERJK, party-membership, and presidential UI instructions with their JSON or CSV interfaces. Removed the undocumented MFA sanctions backend because it returns `null`; retained only the working official regulation and subject-list index.
+
+Education, research, and medicines audit: reduced education data to the three direct EHIS registry workbooks and removed the uncontracted HaridusSilm dashboard add-on. Kept ETIS as an explicitly browser-only public search after verifying rendered project records, while removing claims that its SPA paths are replayable APIs. Rebuilt medicines statistics around the yearbook PDF index and the Medicines Register around its session-backed WebForms CSV/XML exports.
+
+Procurement, assets, tax, and tourism audit: replaced four generic UI recipes with the procurement register's monthly notice XML, RKVR's seven nightly XML extracts and XSD, EMTA's session-and-CSRF public inquiry forms, and the tourism catalog's canonical XLSX distribution API. Removed the eesti.ee state-services wrapper because its client-only navigation page did not provide the promised public service records or a verified catalog interface.
+
+Final interface audit: merged the defence survey wrapper into one current Ministry of Defence document index after removing its dead routes. Rebuilt e-Residency around its parseable React Flight payload, narrowed Rescue Board incidents to the available XLSX and fire CSV coverage, retained KAPO with an explicit browser-index/direct-PDF split, and rebuilt Tallinn council acts and drafts around the TEELE JSON API. Removed the broken Tallinn legal-acts wrapper because its records are available through TEELE and its old site returns a database error.
+
+### Phase 4: Keep the catalog healthy
+
+- [x] Run offline structure checks on every change.
+- [x] Run network smoke checks for audited sources on a schedule rather than on every pull request.
+- [x] Test representative Codex and Claude queries for routing and retrieval success.
+- [x] Remove failed recipes promptly instead of retaining deprecated placeholders.
+
+## Acceptance criteria
+
+- Every catalog route resolves to an existing source recipe.
+- Every source recipe is reachable from the catalog.
+- Both Codex and Claude load the same shared workflow.
+- Every shipped source retrieves public data or records as documented.
+- No runtime file exists only to signal catalog breadth or thoroughness.
+- Examples, generated analyses, virtual environments, and application dependencies are not distributed with the skill.

@@ -1,57 +1,41 @@
 ---
 name: planning-decisions
-description: Query national planning register for spatial planning decisions, planning process stages, and plan document records.
+description: Query Estonia's national planning-register JSON API for plans, lifecycle status, authorities, geometry links, related plans, and public documents.
 ---
 
 # Estonia Planning Decisions
 
-## Use when
-- You need plan lifecycle data (initiated, approved, in force, etc.).
-- You need planning decision records by municipality/region.
+## Access
 
-## Avoid when
-- You need only base geospatial layers.
+- Application: `https://www.planeeringud.ee/plank-web/`
+- API base: `https://www.planeeringud.ee/plank-web/api/`
+- Public JSON requests require no authentication.
 
-## Inputs
-- Planning type, location, and date range.
+## Search
 
-## Outputs
-- Planning records with stage/status and document links.
+POST JSON to `planeering/otsing`; control the result page in the URL:
 
-## Primary endpoint
-- Planning register: https://www.planeeringud.ee/
+```http
+POST /plank-web/api/planeering/otsing?page=0&size=25&sort=kehtestkp,desc
+Content-Type: application/json
 
-## Workflow
-1. Search planning records by location/type.
-2. Capture plan identifiers, responsible authority, and stages.
-3. Extract linked documents and decision references.
-4. Return normalized planning-process dataset.
+{"otsistring":"Vanalinna"}
+```
 
-## Human setup (when needed)
-- If export is UI-only, guide user through exact filters and export/download actions.
+`otsistring` is the verified free-text filter. The response is a Spring page with `content`, `totalElements`, `totalPages`, and page metadata. Search records include `sysid`, `planid`, `plannim`, abbreviated plan type, authority, lifecycle status, relevant dates, purpose, and map link.
 
-## Quality checks
-- Preserve plan IDs and stage timestamps.
-- Clearly separate draft/planned vs approved/in-force plans.
+## Detail
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.planeeringud.ee/ (HTTP 200, text/html;charset=ISO-8859-1, file links detected: 0)
+Fetch `GET planeering/{sysid}` using `sysid` from search results. Do not substitute `planid`; it is a different identifier and is not accepted by this route.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+Return at least `sysid`, `planid`, name, type, status, organizing authority, purpose, lifecycle dates, `planviide`, `bbox`, related plans, and every public `planDokuments` item with its type, original filename, size, and `filePublicUrl`.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Limits
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- Status is lifecycle data. Keep the original `planseisNimi` or `klPlanseisByPlanseis`, and do not collapse draft, established, repealed, or paused plans.
+- Search/export request bodies support more UI filters, but use only fields verified from the live application; use `otsistring` unless another exact filter contract has been checked.
+- Document links may be PDF, ASiC-E, or another original file type.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Verify
+
+Require a paged JSON response, ensure detail `sysid` matches the selected search record, and accept documents only when `filePublicUrl` is present.

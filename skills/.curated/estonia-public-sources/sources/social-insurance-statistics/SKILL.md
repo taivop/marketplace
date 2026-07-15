@@ -1,57 +1,36 @@
 ---
 name: social-insurance-statistics
-description: Query Social Insurance Board statistical publications for benefits, social protection services, and caseload trends.
+description: Download Social Insurance Board pension, state social-insurance, A1 certificate, and service statistics workbooks from the official index.
 ---
 
 # Social Insurance Statistics
 
-## Use when
-- You need Social Insurance Board caseload/benefit statistics.
-- You need social-protection service trend context.
+## Access
 
-## Avoid when
-- You only need unemployment service data.
+- Index: `https://www.sotsiaalkindlustusamet.ee/asutus-uudised-ja-kontakt/praktiline-teave/statistika`
+- The page contains direct XLS/XLSX links grouped by topic and period; no authentication is required.
 
-## Inputs
-- Benefit/service type, period, and region/group.
+## Retrieve
 
-## Outputs
-- Social-insurance statistics dataset with period metadata.
+Fetch the index and parse spreadsheet anchors with their nearest section heading. Select by title and period:
 
-## Primary endpoints
-- Statistics page: https://www.sotsiaalkindlustusamet.ee/asutus-uudised-ja-kontakt/praktiline-teave/statistika
+- `aasta aruande tabel lisadega`: annual pensioner tables.
+- `Riiklik sotsiaalkindlustus YYYY - ...`: quarterly/cumulative state social-insurance workbook.
+- `Tõendi A1 väljastamise statistika`: A1 certificate statistics.
+- Other section-specific service workbooks as labeled on the page.
 
-## Workflow
-1. Locate relevant publication/table on statistics page.
-2. Extract indicators by period/group.
-3. Normalize metric definitions and units.
-4. Return analysis-ready dataset with caveats.
+The state social-insurance workbook is a formatted report, not a flat table. Identify numbered sections and their local header rows; for example pension rows distinguish recipient count, average assigned pension, and amount in thousands of euros.
 
-## Human setup (when needed)
-- If data is offered in document downloads only, walk user through downloads and continue from supplied files.
+## Return
 
-## Quality checks
-- Preserve source terminology for benefits/services.
-- Separate counts, rates, and monetary values.
+Return index/file URLs, anchor title, topic, reporting period, sheet/section, original row label and code, value, unit, and retrieval time.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.sotsiaalkindlustusamet.ee/asutus-uudised-ja-kontakt/praktiline-teave/statistika (HTTP 200, text/html;, file links detected: 56)
+## Limits
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- Some historical files are binary `.xls`; use a reader that supports the legacy format.
+- Quarterly files can be cumulative (`3 kuud`, `6 kuud`, `9 kuud`, `12 kuud`), not independent quarter flows.
+- Do not flatten differently structured report sections into one metric without retaining their headers and units.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Verify
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require spreadsheet signatures and match the requested period in the link label and workbook heading before extracting records.

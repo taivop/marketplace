@@ -1,57 +1,42 @@
 ---
 name: health-welfare-open-data
-description: Use TEHIK open-data listings to locate health and welfare administrative datasets and route them into analysis workflows.
+description: Query TEHIK's public PostgREST API for current seasonal COVID-19 hospitalization and risk-group vaccination aggregates.
 ---
 
-# Estonia Health/Welfare Open Data (TEHIK)
+# TEHIK Seasonal COVID-19 Open Data
 
-## Use when
-- You need administrative health or welfare datasets listed by TEHIK.
-- You need source routing from catalog to downloadable datasets.
+## Access
 
-## Avoid when
-- You need only TAI statistical tables.
+- OpenAPI document and API root: `https://rest-avaandmed.tehik.ee/covid19/`
+- Swagger UI: `https://rest-avaandmed.tehik.ee/covid19/swagger/`
+- No authentication is required.
 
-## Inputs
-- Topic and needed granularity.
+## Datasets
 
-## Outputs
-- Curated dataset shortlist and direct access links.
+- `opendata_covid19_hospitalization`: weekly hospitalization counts by age group and bed profile.
+- `opendata_covid19_riskgroup_vaccination_season_location_agegroup`: seasonal risk-group population and vaccination counts by date, county, and age group.
+- `metadata_odata`: field/table descriptions, including historical schema metadata.
 
-## Primary endpoint
-- TEHIK open data page: https://teabekeskus.tehik.ee/et/avaandmed
+## Query
 
-## Workflow
-1. Identify relevant TEHIK-listed datasets.
-2. Follow through to actual file/API endpoints.
-3. Assess metadata completeness and update cadence.
-4. Return recommended primary dataset and backup options.
+Use PostgREST URL parameters such as `select`, `order`, `limit`, `offset`, and column filters (`eq.`, `gte.`, `lte.`, `in.(...)`). Example:
 
-## Human setup (when needed)
-- If the catalog links to portals requiring manual interaction, give exact click path and request the final file or URL.
+```text
+GET https://rest-avaandmed.tehik.ee/covid19/opendata_covid19_hospitalization?Valid=eq.true&order=StatisticsWeek.desc&limit=100
+```
 
-## Quality checks
-- Check legal/privacy notes on each dataset.
-- Verify that aggregation level matches the user request.
+Request JSON by default or `text/csv` with the `Accept` header.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://teabekeskus.tehik.ee/et/avaandmed (HTTP 200, text/html;, file links detected: 1)
+## Return
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+Preserve source endpoint, query, retrieval time, statistics date/week, season, geography/EHAK code, age group or bed profile, population/count fields, `Valid`, and `ModifiedAt`.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Limits
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- These are seasonal COVID-19 aggregates, not a general health/welfare catalog and not individual records.
+- Filter to `Valid=eq.true` unless invalidated revisions are explicitly needed.
+- A row with null dimensions may be a total; do not combine it with detailed rows without checking aggregation level.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Verify
+
+Use the root OpenAPI document as the current schema, require the documented field set, and check `Valid` plus `ModifiedAt` before analysis.

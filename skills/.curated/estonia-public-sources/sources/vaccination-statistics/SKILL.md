@@ -1,57 +1,38 @@
 ---
 name: vaccination-statistics
-description: Use Health Board vaccination statistics pages for immunization coverage trends and operational public-health monitoring context.
+description: Access the Health Board's official COVID-19 and influenza vaccination Tableau dashboards and export published immunization coverage data.
 ---
 
 # Vaccination Statistics
 
-## Use when
-- You need vaccination coverage and trend indicators.
-- You need official immunization monitoring context.
+## Access
 
-## Avoid when
-- You need broader health service finance metrics.
+- Official page: `https://www.terviseamet.ee/en/nakkushaigused/statistika/vaktsineerimine`
+- COVID-19 workbook: `https://tableauapp.tehik.ee/t/Terviseamet/views/Covid-19vaccination/Vaccinationmap`
+- Influenza workbook: `https://tableauapp.tehik.ee/t/Terviseamet/views/Influenzavaccination/Mapview`
+- Public Tableau views; no login is required.
 
-## Inputs
-- Vaccine group, period, and population scope.
+## Retrieve
 
-## Outputs
-- Structured vaccination indicator dataset and metadata.
+Use the official page to discover the current workbook/view names. Append `.csv?:showVizHome=no` to a Tableau view for its active-sheet export. For example:
 
-## Primary endpoints
-- Vaccination statistics: https://www.terviseamet.ee/en/nakkushaigused/statistika/vaktsineerimine
+`https://tableauapp.tehik.ee/t/Terviseamet/views/Influenzavaccination/Mapview.csv?:showVizHome=no`
 
-## Workflow
-1. Retrieve relevant vaccination datasets/tables.
-2. Extract indicators by group and period.
-3. Normalize age/population categories.
-4. Return trend-ready output with definitions.
+The influenza default export includes vaccination season and coverage measures. The COVID default `Vaccinationmap` CSV may expose only the active age-group sheet; use Tableau's view/worksheet export controls when other dashboard measures are required.
 
-## Human setup (when needed)
-- If data is UI-table or report-only, guide user through export/download and continue from files.
+## Return
 
-## Quality checks
-- Keep denominator definitions with coverage values.
-- Mark updates/revisions explicitly.
+- Preserve vaccination type, season/date, age group, geography, dose/status definition, numerator, denominator, coverage, original field names, workbook/view URL, and retrieval time.
+- Treat decimal coverage values as proportions unless the field label or dashboard explicitly formats them as percentages.
+- State the dashboard's data period, not just the retrieval date.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.terviseamet.ee/en/nakkushaigused/statistika/vaktsineerimine (HTTP 200, text/html;, file links detected: 1)
+## Limits
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- A Tableau CSV exports the active worksheet, not necessarily every measure visible on a dashboard.
+- Sheet names and default filters can change when the publisher updates a workbook.
+- Do not combine COVID-19 and influenza coverage without retaining their different seasons and eligibility definitions.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Verify
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the official page to embed both named Tableau workbooks.
+- Require the selected export to return HTTP 200 `text/csv`, a header row, and data rows. Reject Tableau HTML or a one-column selector export when the requested measure is absent.

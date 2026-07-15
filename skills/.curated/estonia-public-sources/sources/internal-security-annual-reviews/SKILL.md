@@ -1,58 +1,27 @@
 ---
 name: internal-security-annual-reviews
-description: Retrieve Internal Security Service annual review publications with anti-bot-aware workflow and fallback handling when automated access is blocked.
+description: Retrieve Estonian Internal Security Service (KAPO) annual-review PDFs from its public year-by-year index.
 ---
 
-# Internal Security Annual Reviews (KAPO)
+# KAPO Annual Reviews
 
-## Use when
-- You need annual institutional review publications from the Internal Security Service.
-- You need high-level historical internal-security governance context.
+Use this source for KAPO's annual internal-security reviews from 1998 onward.
 
-## Avoid when
-- You need guaranteed machine-readable extraction without manual/browser steps.
+## Endpoints
 
-## Inputs
-- Target year(s).
-- Language preference.
+- Public index: `https://kapo.ee/et/aastaraamatud/`
+- Current direct-file example: `https://kapo.ee/sites/default/files/content_page_attachments/aastaraamat-2025-2026.pdf`
 
-## Outputs
-- Annual review list and extracted sections/indicators from downloaded reports.
+## Workflow
 
-## Access reality statement
-- Access type: `no public machine-readable data` (practical workflow is `UI copy-only`/manual browser download).
-- Verified on 2026-02-24.
-- Direct automated HTTP access to annual review page can return `403`.
+1. Open the index with a browser or web-page reader. Plain HTTP clients can receive `403` on the index even though the public page renders normally.
+2. Select the required year and copy the linked PDF URL. Do not construct filenames from years: suffixes and year formats vary.
+3. Download the direct PDF with an ordinary HTTP client and extract only the requested sections.
+4. Keep the displayed review year, direct PDF URL, language, retrieval time, and page references.
 
-## Primary endpoints
-- Annual reviews landing page: https://www.kapo.ee/aastaraamat/
+The files are narrative reports, not row-level incident data. Do not infer complete operational statistics from omitted or selectively reported figures.
 
-## Retrieval workflow (reproducible)
-1. Attempt direct access and log response status.
-2. If blocked (e.g., `403`), switch to browser/manual retrieval flow (human-guided click/download).
-3. Collect annual report file URLs or downloaded files provided by user.
-4. Extract report metadata (year, title, publication language) and requested content fields.
-5. Return records with explicit `access_method` and blockage notes.
+## Verification
 
-## Request/query contract
-- No documented public API.
-- Access may be protected by anti-bot controls and require browser challenge completion.
-- Treat extraction as document-based once files are obtained.
-
-## Output schema expectations
-- `source_url`
-- `report_year`
-- `report_title`
-- `report_file_url` (if available)
-- `access_method` (`direct`, `browser-manual`, `user-provided-file`)
-- `extracted_section`
-- `notes`
-
-## Limits and caveats
-- Automation reliability is low due access controls.
-- Publication format and structure can vary by year.
-- Do not assume completeness if some years are inaccessible in current run.
-
-## Verification hooks
-- Direct request to `https://www.kapo.ee/aastaraamat/` observed `HTTP 403` on 2026-02-24.
-- Extraction run must explicitly report whether records came from direct fetch or manual/browser fallback.
+- The public index lists annual reviews from 1998 through the current edition.
+- A valid direct file returns `application/pdf` and starts with `%PDF-`.

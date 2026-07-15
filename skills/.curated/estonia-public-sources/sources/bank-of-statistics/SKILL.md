@@ -1,78 +1,49 @@
 ---
 name: bank-of-statistics
-description: Retrieve macro-financial and monetary statistics from the Bank of Estonia statistics portal for banking, external sector, and monetary analysis.
+description: Retrieve Bank of Estonia macro-financial statistics and exchange-rate series from its public statistics portal JSON endpoints.
 ---
 
 # Bank of Estonia Statistics
 
-## Use when
-- You need central-bank indicators (monetary, financial, external sector).
-- You need statistics complementary to Statistics Estonia.
+## Access
 
-## Avoid when
-- The indicator is already fully available from Statistics Estonia and no financial split is needed.
+Public JSON endpoints behind the portal at `https://statistika.eestipank.ee/`. No login, but send a browser user agent plus `Referer: https://statistika.eestipank.ee/`; Cloudflare may reject generic clients.
 
-## Access reality
-- Public access type: JavaScript UI backed by `/spring/*` JSON endpoints.
-- Critical caveat: direct endpoint calls can return `406` without browser-like request headers.
+## Retrieve
 
-## Inputs
-- Indicator topic and period.
-- Preferred granularity and format.
+Use these headers for `/spring/*` requests:
 
-## Outputs
-- Downloaded indicator series and source citation.
+```text
+Accept: application/json, text/plain, */*
+X-Requested-With: XMLHttpRequest
+Referer: https://statistika.eestipank.ee/
+User-Agent: Mozilla/5.0
+```
 
-## Primary endpoints
-- Portal UI: https://statistika.eestipank.ee/
-- Example JSON endpoints (public):
-  - https://statistika.eestipank.ee/spring/getValuutad
-  - https://statistika.eestipank.ee/spring/getValuutaKursid
-  - https://statistika.eestipank.ee/spring/getValuutaKurssAjaloos
-  - https://statistika.eestipank.ee/spring/getAvaldamiskalenderHeaders
-  - https://statistika.eestipank.ee/spring/getHeadingsFilterData
-  - https://statistika.eestipank.ee/spring/getAvaldamiskalenderList
+Currency discovery:
 
-## Retrieval workflow
-1. Start from portal page to identify needed indicator family.
-2. For `/spring/*` endpoint calls, send headers:
-   - `Accept: application/json, text/plain, */*`
-   - `X-Requested-With: XMLHttpRequest`
-   - `Referer: https://statistika.eestipank.ee/`
-3. Call relevant endpoint with required parameters.
-4. Parse JSON response and normalize dates/units.
-5. Keep endpoint URL and parameter set with output.
+```text
+GET https://statistika.eestipank.ee/spring/getValuutad?lang=et
+```
 
-## Request contract
-- `getValuutaKursid`:
-  - required: `aeg`, `aeg1`, `aeg2`, `tyyp`, `lang`
-  - date format expected by endpoint: `dd.mm.yyyy`
-- `getValuutaKurssAjaloos`:
-  - required: `valuuta1`, `valuuta2`, `aegAlg`, `aegLopp`, `lang`, `step`
-  - known `step` values: `DAY`, `WEEK`, `MONTH`, `QUARTER`, `SEMIANNUAL`, `YEAR`
-- `getAvaldamiskalenderList`:
-  - required: `lng`
-  - optional filter: `rubriikId`
+Known-valid history example:
 
-## Output schema expectations
-- Keep at least:
-  - indicator code/name
-  - period/date
-  - value
-  - unit/currency
-  - dimension filters used (if any)
-  - source endpoint URL and params
+```text
+GET https://statistika.eestipank.ee/spring/getValuutaKurssAjaloos?valuuta1=USD&valuuta2=GBP&aegAlg=1.1.2010&aegLopp=7.1.2010&lang=et&step=DAY
+```
 
-## Limits and caveats
-- Endpoints are unofficially documented through frontend behavior.
-- Some endpoint combinations return empty arrays if params are incomplete or mismatched.
-- UI routes are hash-based; data endpoints are under `/spring/`.
+`step` accepts `DAY`, `WEEK`, `MONTH`, `QUARTER`, `SEMIANNUAL`, or `YEAR`. Dates use `d.m.yyyy`. Other indicator families are selected in the portal; preserve the `/spring/*` request and parameters observed there.
 
-## Verification hooks
-- Verify JSON response content type is `application/json`.
-- Verify endpoint returns non-empty arrays for known-valid sample query.
-- Verify calls without headers can fail with `406` and calls with headers succeed.
+## Return
 
-## Quality checks
-- Confirm frequency (daily/weekly/monthly/quarterly/annual).
-- Confirm whether values are stock or flow before interpretation.
+Keep the indicator/currency codes, date or period, value, unit/currency, frequency, filters, endpoint, parameters, and retrieval time. The exchange-rate history fields are `aeg`, `kurss`, and `teade`; decimal commas are locale-formatted numbers.
+
+## Limits
+
+- The frontend endpoints are public but not a versioned API; contracts can change with the portal.
+- Incomplete or incompatible parameters can return an empty array with HTTP 200.
+- Cloudflare cookies or a normal user agent may be required even when the endpoint is public.
+
+## Verify
+
+Require `application/json` and a non-empty array. The known-valid history example returns four records dated 4-7 January 2010; `getValuutad` returns objects containing `code`, `name`, and `teade`.

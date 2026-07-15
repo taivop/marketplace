@@ -1,59 +1,37 @@
 ---
 name: weather-data
-description: Query Estonian Weather Service XML feeds for forecast and observation data usable in time-series and impact analysis.
+description: Retrieve current Estonian weather observations and forecasts from Environment Agency XML feeds.
 ---
 
-# Estonia Weather Data
+# Estonian Weather XML
 
-## Use when
-- You need weather observations or forecast feeds from official service.
-- You need weather covariates for demand, transport, or health models.
+## Access
 
-## Avoid when
-- You need climate normals that are not available in feed endpoints.
+Public XML feeds. No authentication. Send a normal user agent if Cloudflare rejects the default client.
 
-## Inputs
-- Feed type (forecast/observations), stations/locations, period.
+## Endpoints
 
-## Outputs
-- Parsed weather dataset with timestamps and variable schema.
+- Observations: https://www.ilmateenistus.ee/ilma_andmed/xml/observations.php
+- English forecast: https://www.ilmateenistus.ee/ilma_andmed/xml/forecast.php?lang=eng
+- Estonian forecast: https://www.ilmateenistus.ee/ilma_andmed/xml/forecast.php?lang=est
 
-## Primary endpoints
-- Forecast XML: https://www.ilmateenistus.ee/ilma_andmed/xml/forecast.php
-- Observations XML: https://www.ilmateenistus.ee/ilma_andmed/xml/observations.php
+## Retrieve
 
-## Workflow
-1. Pull required XML feed.
-2. Parse timestamps, station/location fields, and numeric variables.
-3. Convert units/timezones consistently.
-4. Return tidy tabular output.
+1. Fetch observations for station measurements or forecasts for daily/night/day outlooks.
+2. Parse XML; read the observation root `timestamp` as Unix time.
+3. Select stations by `name`, `wmocode`, or coordinates.
+4. Preserve missing/empty measurements rather than converting them to zero.
 
-## Human setup (when needed)
-- Usually none.
+## Return
 
-## Quality checks
-- Handle missing station readings safely.
-- Document timezone assumptions explicitly.
+For observations keep station name/code, longitude, latitude, phenomenon, visibility, precipitation, pressure, humidity, temperature, wind direction/speed/gust, water level/temperature, UV, radiation fields, source URL, observation timestamp, and retrieval time. For forecasts keep date plus night/day place, phenomenon, temperature, wind, sea, and text fields present.
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.ilmateenistus.ee/ilma_andmed/xml/forecast.php (HTTP 200, text/xml;charset=UTF-8, file links detected: 0)
-- https://www.ilmateenistus.ee/ilma_andmed/xml/observations.php (HTTP 200, text/xml;, file links detected: 0)
+## Limits
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- These feeds describe current observations and near-term forecasts, not a historical archive.
+- Station fields vary by sensor availability.
+- Forecast text and place labels depend on `lang`.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Verify
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require HTTP 200 XML. Observations must have root `observations`, a numeric `timestamp`, and at least one `station` with `name`, coordinates, and a measurement field. Forecasts must have root `forecasts` and at least one dated `forecast` containing `night` and `day`.

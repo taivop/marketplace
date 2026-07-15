@@ -1,59 +1,46 @@
 ---
 name: tallinn-council-documents
-description: Query Tallinn council document system (TEELE) for council acts, drafts, and proceeding documents.
+description: Query Tallinn's TEELE JSON API for adopted council legal acts, council drafts, and document details.
 ---
 
-# Tallinn Council Documents (TEELE)
+# Tallinn TEELE Documents
 
-## Use when
-- You need Tallinn city council acts/drafts/proceeding docs.
-- You need operational document flow by publication/submission dates.
+Use this source for Tallinn City Council regulations, resolutions, drafts, and proceeding metadata. TEELE supersedes the broken `oigusaktid.tallinn.ee` wrapper for these records.
 
-## Avoid when
-- You only need final legal acts already in Tallinn legal acts register.
+## API
 
-## Inputs
-- Document type, date range, sort criteria, and filters.
+Base: `https://teele.tallinn.ee/api`
 
-## Outputs
-- Council document table with links and metadata.
+- System settings: `GET /systemSettings`
+- Search: `GET /documents`
+- Detail: `GET /documents/{id}?lang=EE`
+- Browser detail: `https://teele.tallinn.ee/documents/{id}/view`
 
-## Primary endpoints
-- Acts endpoint: https://teele.tallinn.ee/documents/council/acts?page=1&pageSize=10&sortColumn=publishedAt&sortDirection=desc
-- Drafts endpoint: https://teele.tallinn.ee/documents/council/drafts?tableType=incouncilproceeding&page=1&pageSize=10&sortColumn=documentSubmission.acceptedAt&sortDirection=ASC
+Read `COUNCILUNIT` from `/systemSettings` rather than hard-coding the current unit ID. Encode arrays as repeated query keys.
 
-## Workflow
-1. Query acts/drafts endpoints with bounded pagination.
-2. Extract document IDs, publication/submission dates, and status fields.
-3. Follow detail links for full document metadata.
-4. Return normalized council-doc dataset.
+## Search contracts
 
-## Human setup (when needed)
-- If certain documents are not API-visible and require browser interaction, guide user to open the detail page and share URL.
+Common pagination: `page=1&pageSize=10&lang=EE`.
 
-## Quality checks
-- Keep document IDs and source endpoint parameters.
-- Distinguish drafts from adopted acts.
+Adopted council acts:
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://teele.tallinn.ee/documents/council/acts?page=1&pageSize=10&sortColumn=publishedAt&sortDirection=desc (HTTP 200, text/html, file links detected: 0)
-- https://teele.tallinn.ee/documents/council/drafts?tableType=incouncilproceeding&page=1&pageSize=10&sortColumn=documentSubmission.acceptedAt&sortDirection=ASC (HTTP 200, text/html, file links detected: 0)
+- `documentTypes=RESOLUTION&documentTypes=REGULATION`
+- `publisherUnitId={COUNCILUNIT}`
+- `status=ACCEPTED`
+- `sortColumn=publishedAt&sortDirection=desc`
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+Council drafts in active council proceedings:
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- same document types and publisher unit
+- `statuses=INCOUNCILPROCEEDING&statuses=WAITINGFORCOUNCILMEETING`
+- `sortColumn=documentSubmission.acceptedAt&sortDirection=asc`
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Output and limits
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Keep `id`, `title`, document type/status, `number`, `draftNumber`, `publishedAt`, `documentSubmission.acceptedAt`, submitters, publisher, and access-restriction flags. Fetch detail for enforcement/publication metadata and use the browser detail only for full rendered content or attachments.
+
+Respect `pageCount`; do not treat restricted documents as accessible merely because they appear in search results.
+
+## Verification
+
+A valid search response contains `page`, `pageCount`, `rowCount`, and `results`; each result has an integer `id`, title, document type, and status.

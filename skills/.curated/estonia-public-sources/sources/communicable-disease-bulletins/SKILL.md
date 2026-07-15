@@ -1,57 +1,37 @@
 ---
 name: communicable-disease-bulletins
-description: Use Health Board communicable disease bulletins for outbreak, surveillance, and public-health operations indicators.
+description: Retrieve Estonia's monthly communicable-disease surveillance bulletins and their disease, outbreak, age, and regional indicators from Health Board PDFs.
 ---
 
 # Communicable Disease Bulletins
 
-## Use when
-- You need infectious disease surveillance bulletins and trend indicators.
-- You need official public-health operational context.
+## Access
 
-## Avoid when
-- You need healthcare financing indicators.
+- Index: `https://www.terviseamet.ee/en/communicable-diseases/statistics/communicable-disease-bulletins`
+- Public server-rendered HTML linking monthly PDF bulletins; no login or JavaScript is required.
 
-## Inputs
-- Disease group, period, and geographic scope.
+## Retrieve
 
-## Outputs
-- Structured bulletin-derived disease indicators and metadata.
+1. Fetch the index and extract links under the required year.
+2. Resolve relative `/sites/default/files/documents/...pdf` paths against `https://www.terviseamet.ee`.
+3. Download the PDFs whose visible labels match the requested months. Current English filenames use `EEpiR <month> <year>.pdf`.
+4. Extract tables with a PDF-aware tool; use OCR only for pages that have no text layer.
 
-## Primary endpoints
-- Bulletins: https://www.terviseamet.ee/en/communicable-diseases/statistics/communicable-disease-bulletins
+The page also links the TAI PxWeb morbidity database for longer time series. Use `health-statistics` when that structured database answers the question without bulletin-specific commentary.
 
-## Workflow
-1. Retrieve relevant bulletin files/pages.
-2. Extract disease indicators by period/location.
-3. Normalize disease names and units.
-4. Return structured dataset with bulletin references.
+## Return
 
-## Human setup (when needed)
-- If indicators are only in downloadable bulletins, guide user through retrieval and continue from files.
+- Preserve bulletin month, publication URL, disease name, geography, age group, count/rate, unit, footnotes, and retrieval time.
+- Keep provisional values and case-definition notes attached to their table.
+- Cite the exact PDF page for extracted values.
 
-## Quality checks
-- Keep disease taxonomy and case definitions with values.
-- Distinguish provisional from finalized counts.
+## Limits
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.terviseamet.ee/en/communicable-diseases/statistics/communicable-disease-bulletins (HTTP 200, text/html;, file links detected: 26)
+- The index is a publication archive, not an API; file paths change each month.
+- Bulletin tables and narrative may mix Estonian and English disease labels.
+- Do not combine counts across tables until their periods, geographies, and definitions match.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 `text/html` with multiple year sections and multiple `.pdf` bulletin links.
+- Require each selected file to return a PDF (`%PDF-` signature). Reject the index page itself as disease data.

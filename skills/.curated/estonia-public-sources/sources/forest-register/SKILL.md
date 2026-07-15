@@ -1,57 +1,50 @@
 ---
 name: forest-register
-description: Use official forest register for forestry records, forest-unit context, and governance-relevant registry extraction.
+description: Query the public Forest Register JSON API for properties, cadastral units, forest stands, inventory attributes, geometry, and proposed work.
 ---
 
 # Forest Register
 
-## Use when
-- You need official forestry register records or metadata.
-- You need forest-unit level context for governance/environment workflows.
+## Access
 
-## Avoid when
-- You only need general environmental indicators.
+- Application: `https://register.metsad.ee/`
+- API base: `https://register.metsad.ee/portaal/api/rest/`
+- No authentication is required for the public calls below.
 
-## Inputs
-- Forest area/unit identifier, location scope, and period.
+## Search
 
-## Outputs
-- Structured forest register extract with provenance.
+Send `GET eraldis/puu` with one or more URL parameters:
 
-## Primary endpoints
-- Forest register: https://register.metsad.ee/
+- `katastriNr`: cadastral identifier.
+- `kinnistuNr`: property number.
+- `yksuseNimi`: property name.
+- `kvartaliNr`: forest quarter number.
+- `maakondKood` and `valdKood`: optional location narrowing.
 
-## Workflow
-1. Identify lookup mode and target forest unit/area.
-2. Extract available registry attributes.
-3. Normalize location and classification fields.
-4. Return structured dataset and caveats.
+At least one of `katastriNr`, `kinnistuNr`, `yksuseNimi`, or `kvartaliNr` is required; county or municipality alone is not a search. Example:
 
-## Human setup (when needed)
-- If interactive map/portal controls block direct extraction, guide user through export/copy steps and continue from provided files.
+```text
+GET https://register.metsad.ee/portaal/api/rest/eraldis/puu?kinnistuNr=12345
+```
 
-## Quality checks
-- Preserve official unit identifiers and classes.
-- Record retrieval date and source view.
+The response is a property tree: top-level units contain `alamYksused`, and cadastral sub-units contain `eraldised`. Each stand has an `id`, `katastriNr`, `eraldiseNr`, `pindala`, status, ownership label, and EPSG:3301 GeoJSON string.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://register.metsad.ee/ (HTTP 200, text/html, file links detected: 1)
+## Detail
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+Use the stand `id`, not its displayed stand number:
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+```text
+GET https://register.metsad.ee/portaal/api/rest/eraldis/detail/{id}
+```
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+Return identifiers, property and cadastral data, inventory date, county/municipality, area, site and main-species codes, dimensions, age/composition elements, volume/increment, damage, special features, proposed work, ownership fields, and `alaGeoJson` as available.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Limits
+
+- Code fields such as `kasvukohaKood`, `peapuuliik`, and `tooKood` are register classifications; do not guess labels when a code list has not been retrieved.
+- Dates are Unix epoch milliseconds in several fields.
+- `alaGeoJson` is a JSON-encoded string in EPSG:3301, not an already parsed WGS84 geometry.
+
+## Verify
+
+Require a non-empty `eraldised` list, then require the detail response `id` to match the requested stand and preserve `katastriNr` plus `eraldiseNr`.

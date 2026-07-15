@@ -1,62 +1,42 @@
 ---
 name: eu-funded-projects
-description: Query EU-funded project information from RTK and Structural Funds sources for programme-level and beneficiary-level project tracking in Estonia.
+description: Download RTK project-level EU and related funding workbooks from its public Nextcloud WebDAV share.
 ---
 
 # EU-Funded Projects
 
-## Use when
-- You need supported-project data for EU funding programmes in Estonia.
-- You need beneficiary/programme/project-level tracking context.
+## Access
 
-## Avoid when
-- You only need domestic non-EU subsidy flows.
+- Official index: `https://www.rtk.ee/toetuste-ulevaated-oigusaktid/ulevaade-toetatud-projektidest/toetatud-projektid`
+- Public file share: `https://pilv.rtk.ee/s/Mig46PpedQosEam`
+- WebDAV root: `https://pilv.rtk.ee/public.php/webdav/`
+- Public, no password. Use HTTP Basic username `Mig46PpedQosEam` with an empty password.
 
-## Inputs
-- Programme, period, beneficiary/region, and project theme.
+## Retrieve
 
-## Outputs
-- Project-level dataset with programme and funding fields.
+1. Send `PROPFIND` to the WebDAV root with header `Depth: 2` and the public-share credentials.
+2. Parse the DAV XML responses. Select an XLSX by filename and `getlastmodified`; do not hard-code the dated filename.
+3. Current folders distinguish the latest Kohesio export, domestic programmes, and supported-project tables for historical and current funding periods.
+4. GET the selected percent-encoded `d:href` from `https://pilv.rtk.ee` with the same credentials.
+5. Read the workbook's title and multi-row headers before normalizing it. In the current combined workbook, the project table starts after title/blank rows and uses two header rows.
 
-## Primary endpoints
-- RTK implementation info: https://www.rtk.ee/en/funds-and-programmes/implementation
-- Structural funds supported projects: https://www.struktuurifondid.ee/et/toetatud-projektid
+Example listing:
 
-## Workflow
-1. Identify programme and funding period.
-2. Retrieve supported-project listing/export.
-3. Normalize beneficiary, project, and funding fields.
-4. Return project table plus programme-level summaries.
+```bash
+curl -u 'Mig46PpedQosEam:' -X PROPFIND -H 'Depth: 2' \
+  https://pilv.rtk.ee/public.php/webdav/
+```
 
-## Human setup (when needed)
-- If Structural Funds site fails automated SSL/network checks in the current environment, guide the user to download/export manually and continue from provided data.
+## Return
 
-## Quality checks
-- Track funding-period and programme identifiers.
-- Keep approved vs paid amounts distinct.
+Keep the source filename, modification date, funding period, fund, measure, project number and name, recipient and registry code, region, dates, status, budget components, and paid amounts. Preserve approved budget and paid amounts as separate fields.
 
-## Limitations
-- Some environments may fail TLS validation for `struktuurifondid.ee`; use manual export fallback.
+## Limits
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.rtk.ee/en/funds-and-programmes/implementation (HTTP 200, text/html;, file links detected: 2)
-- https://www.struktuurifondid.ee/et/toetatud-projektid (HTTP 000, 000, file links detected: 2)
+- Filenames contain dates and are replaced as RTK updates the export.
+- Older funding periods are separate workbooks; choose by filename rather than assuming the newest file covers all periods.
+- Excel dates and merged/multi-row headings require workbook-aware parsing.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require HTTP `207 Multi-Status`, DAV `200` entries, XLSX content type, a non-zero content length, and a workbook containing project, recipient, and funding fields. Reject the RTK narrative page or Power BI/Tableau embed as a data response.

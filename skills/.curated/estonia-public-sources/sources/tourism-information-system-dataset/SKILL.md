@@ -1,62 +1,30 @@
 ---
 name: tourism-information-system-dataset
-description: Retrieve tourism services/inventory records from the official andmed.eesti.ee dataset for the national tourism information system.
+description: Retrieve current XLSX tourism inventory distributions from the official andmed.eesti.ee dataset API.
 ---
 
-# Tourism Information System Dataset (andmed.eesti.ee)
+# Tourism Information System Dataset
 
-## Use when
-- You need structured tourism service inventory data from the national tourism information system dataset.
-- You need direct downloadable distribution files and metadata.
+Use this source for structured tourism inventory records published from puhkaeestis.ee and visitestonia.com.
 
-## Avoid when
-- You need broad dataset discovery only (use open-data discovery skill).
+## Endpoints
 
-## Inputs
-- Dataset slug (default fixed for this source).
-- Distribution format preference (XLSX, etc.).
+- Slug: `turismitoodete-ja-teenuste-andmed-puhkaeestis.ee-ja-visitestonia.com-eesti-riiklikus-turismiinfosusteemis`
+- Metadata: `https://andmed.eesti.ee/api/datasets/slug/{slug}`
+- Download URL: read each current `distributions[].accessUrls[0]` from metadata.
 
-## Outputs
-- Dataset metadata plus downloaded distribution file links/records.
+The canonical download pattern is `https://andmed.eesti.ee/api/v2/datasets/{datasetIdentifier}/distribution/{distribution_id}/file`. It redirects to an expiring signed object URL.
 
-## Access reality statement
-- Access type: `API` + `download files`.
-- Verified on 2026-02-24.
-- Dataset metadata and distribution links are available via andmed.eesti.ee JSON APIs.
+## Workflow
 
-## Primary endpoints
-- Dataset page: https://andmed.eesti.ee/datasets/turismitoodete-ja-teenuste-andmed-puhkaeestis.ee-ja-visitestonia.com-eesti-riiklikus-turismiinfosusteemis
-- Dataset metadata by slug: https://andmed.eesti.ee/api/datasets/slug/turismitoodete-ja-teenuste-andmed-puhkaeestis.ee-ja-visitestonia.com-eesti-riiklikus-turismiinfosusteemis
-- Dataset search API: https://andmed.eesti.ee/api/datasets/search
-- Distribution file URL pattern (from metadata `accessUrls`): `https://andmed.eesti.ee/api/v2/datasets/<dataset_id>/distribution/<distribution_id>/file`
+1. GET metadata with `Origin: https://andmed.eesti.ee` and require `status: COMPLETED`.
+2. Select current XLSX distributions by `titleEn`. The dataset currently separates accommodation, culture/history, sauna/wellness, nature/active holiday, events, and food places.
+3. Download from `accessUrls`; parse the workbook using its current headers.
+4. Keep `datasetIdentifier`, distribution ID/title, `updatedAt`, canonical access URL, and retrieval time with each extract.
 
-## Retrieval workflow (reproducible)
-1. Query slug endpoint and capture dataset metadata and `distributions` list.
-2. Read each distribution `accessUrls` entry and select required format.
-3. Request distribution file URL; follow redirect to signed object storage URL.
-4. Download and parse selected files.
-5. Return metadata + parsed records with distribution IDs and update timestamps.
+Never persist the redirected signed URL. Distribution IDs and workbook columns may change, so rediscover them from metadata on every run.
 
-## Request/query contract
-- Metadata endpoints: `GET` JSON.
-- Distribution download endpoints: `GET`, returns `302` redirect to signed storage URL.
-- Important fields from slug response: `distributions[].id`, `accessUrls[]`, `format`, `createdAt`, `updatedAt`, `fileId`.
+## Verification
 
-## Output schema expectations
-- `dataset_slug`
-- `dataset_source_url`
-- `distribution_id`
-- `distribution_title`
-- `format`
-- `updated_at`
-- `download_url`
-- `record` (parsed row object)
-
-## Limits and caveats
-- Signed distribution URLs expire; store canonical API URL plus retrieval timestamp.
-- Distribution structure/columns can change across updates.
-
-## Verification hooks
-- Slug endpoint returns `status: COMPLETED` and multiple distributions.
-- Distribution `accessUrls` include `/api/v2/datasets/<id>/distribution/<id>/file`.
-- File endpoint returns HTTP `302` to signed S3 URL.
+- Metadata identifies organization `ettevotluse-ja-innovatsiooni-sihtasutus` and exposes multiple XLSX distributions with nonzero `byteSize`.
+- A valid distribution begins with the ZIP/XLSX signature `PK\x03\x04`.

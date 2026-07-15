@@ -1,58 +1,59 @@
 ---
 name: construction-register
-description: Use Estonia construction register (EHR) public data views for permits, building records, and construction-related operational events.
+description: Query Estonia's Construction Register (EHR) public JSON endpoints for building search results and detailed building records.
 ---
 
-# Estonia Construction Register (EHR)
+# Construction Register (EHR)
 
-## Use when
-- You need building permit/construction operation records.
-- You need location/project-level construction administrative data.
+## Access
 
-## Avoid when
-- You need only aggregated construction statistics.
+- Search API: `POST https://livekluster.ehr.ee/api/building/v2/buildingSearchPageable`
+- Detail API: `GET https://livekluster.ehr.ee/api/building/v3/buildingData`
+- Public search UI: `https://livekluster.ehr.ee/ui/ehr/v1/detailsearch/BUILDINGS_SEARCH`
+- Response: JSON; no login is required for these two API calls.
 
-## Inputs
-- Address/parcel, municipality, permit type, date range.
+## Search
 
-## Outputs
-- Construction-register records with permit/status metadata.
+Send JSON with at least one useful filter plus one-based pagination:
 
-## Primary endpoints
-- EHR app: https://livekluster.ehr.ee/ui/ehr/v1
-- EHR redirect: https://www.ehr.ee (redirects to above)
+```json
+{
+  "buildingName": "raekoda",
+  "page": 1,
+  "pageSize": 10
+}
+```
 
-## Workflow
-1. Locate relevant EHR public search area.
-2. Apply location/permit/date filters.
-3. Extract permit/project records and status fields.
-4. Return standardized construction operations dataset.
+Supported public UI filters map directly to these payload fields:
 
-## Human setup (when needed)
-- If EHR requires interactive map/form navigation, walk user through exact search steps and ask them to share resulting URLs or exported files.
+- `buildingLocation`: address, EHR code, or cadastral identifier
+- `buildingName`
+- `buildingType`: array containing `H` (building) or `R` (structure)
+- `buildingStates`: array of classifier codes
+- `purposeOfUse` and `ocurringPurposeOfUse`: arrays of purpose IDs
+- `lastRegisteredDocumentType`, `ownershipType`, `heritage`
+- `firstUseDate`: object with optional `from` and `to` year strings
+- `firstUseMissing`: boolean
+- `page`, `pageSize`, optional `sortField`, `sortDir`
 
-## Quality checks
-- Keep unique register IDs and address references.
-- Distinguish planned, approved, and completed states.
+The response contains `page`, `pageSize`, `total`, and `data`. Keep each result's `ehrCode`, `buildingId`, addresses, name, type, state, purpose, first-use year, dimensions, ownership type, latest document metadata, and geometry.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://livekluster.ehr.ee/ui/ehr/v1 (JavaScript SPA, requires browser rendering)
+## Detail
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+After selecting an `ehrCode`, request:
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+```text
+GET https://livekluster.ehr.ee/api/building/v3/buildingData?ehr_code=<EHR_CODE>&json=true
+```
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+The detail response is nested under `ehitis` and includes basic data, addresses, cadastral units, geometry, uses, dimensions, technical systems, and energy labels when present.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Limits
+
+- Owner search uses an authenticated endpoint and is not part of this public contract.
+- Public access to some attached documents is temporarily restricted; do not promise document-file access from the building APIs.
+- Geometry coordinates are in the register's source coordinate system; do not label them WGS84 without conversion.
+
+## Verify
+
+Require a numeric `total`, a non-empty `data` array, and `ehrCode`, `buildingId`, `buildingAddress`, and `buildingState` in a search result. For detail calls, require `ehitis.ehitiseAndmed.ehrKood` to equal the requested code.

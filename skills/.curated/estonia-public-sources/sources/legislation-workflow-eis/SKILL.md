@@ -1,58 +1,41 @@
 ---
 name: legislation-workflow-eis
-description: Track Estonian draft legislation workflow in EIS, including coordination status, document versions, and stakeholder input history.
+description: Read draft legislation, coordination, submission, and public-consultation listings from Estonia's EIS application.
 ---
 
-# Estonia Legislation Workflow (EIS)
+# Draft Legislation And Consultations (EIS)
 
-## Use when
-- You need operational status of draft legal acts in inter-ministerial coordination.
-- You need chronology of proposals, versions, and comments.
+## Access
 
-## Avoid when
-- You need only final enacted law text (use Riigi Teataja legal-acts skill).
+- Current listings: `https://eelnoud.valitsus.ee/main/mount/share/home`
+- Legacy OSALE URLs redirect to this EIS application.
+- Public HTML; no login is required to read the current listing.
 
-## Inputs
-- Draft title, keyword, ministry, or registry identifier.
+## Retrieve
 
-## Outputs
-- Timeline of workflow steps and current status.
-- Linked documents and responsible institution context.
+Fetch the current-listings URL with a normal browser user agent and parse the tables headed:
 
-## Primary endpoint
-- EIS portal: https://eelnoud.valitsus.ee/main/main
+- `Avalikuks konsulteerimiseks esitatud eelnoud` (public consultations)
+- `Kooskolastamiseks esitatud eelnoud` (coordination)
+- `Vabariigi Valitsusele esitatud eelnoud` (government submissions)
 
-## Workflow
-1. Search draft by title/keyword/ministry.
-2. Open draft card and capture identifiers and latest status.
-3. Extract milestone timeline (submission, coordination, revisions, approval path).
-4. Return concise status summary with direct source links.
+The visible rows contain title, EIS number, initiator reference, start date, deadline when applicable, status, and type. Keep each row associated with its table heading.
 
-## Human setup (when needed)
-- If search results are only available via interactive UI, guide the user step-by-step to open the correct draft card and share the URL; continue from that URL.
+For records outside the current listing, use the page's `Tapne otsing` (exact search). EIS uses a stateful JavaScript form rather than stable query-string URLs, so use a browser for historical searches and preserve the final share URL or EIS number.
 
-## Quality checks
-- Separate current draft status from historical status.
-- Keep timestamps and institution names exactly as published.
+## Return
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://eelnoud.valitsus.ee/main/main (HTTP 200, text/html;charset=UTF-8, file links detected: 0)
+- Preserve the Estonian title, EIS number, initiator reference, dates, status, type, listing category, source URL, and retrieval time.
+- Label whether a record is a consultation, coordination item, or government submission.
+- Use Riigi Teataja for final enacted text; EIS describes the draft workflow.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Row links are JavaScript form events, not ordinary document URLs.
+- The formerly advertised `/main/mount/rss/home/publicConsult.rss` endpoint no longer returns RSS reliably; do not use it.
+- The homepage is a current/recent view, not a complete historical export.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 HTML with the EIS title, all three listing headings, and at least one row containing an EIS-style identifier such as `SOM/26-0813`.
+- Reject a Cloudflare challenge, login page, or empty shell as data.

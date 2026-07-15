@@ -1,66 +1,44 @@
 ---
 name: education-data
-description: Retrieve public education registry and indicator records from EHIS and HaridusSilm, including published XLS/XLSX extracts and public registry views.
+description: Download public EHIS education-register extracts for institutions, curricula, and institutions with unconfirmed data.
 ---
 
-# Education Data (EHIS + HaridusSilm)
+# Education Data (EHIS)
 
 ## Use when
-- You need public education registry extracts (institutions/curricula/status).
-- You need education indicator context from HaridusSilm.
+- You need public education-institution contacts or curriculum-register records.
+- You need the EHIS list of institutions whose registry data is unconfirmed.
 
 ## Avoid when
-- You need student-level personal data (not publicly available).
+- You need student-level personal data; it is not public.
+- You need general education indicators rather than EHIS registry extracts; use Statistics Estonia or the separate HaridusSilm website.
 
-## Inputs
-- Education scope (`institutions`, `curricula`, `validation-status`, indicator topic).
-- Period and geography.
+## Endpoints
+- EHIS file index: https://www.ehis.ee/
+- Institution contacts: `https://gituja.eenet.ee/ehis/ehis1/failihoidla/-/raw/main/koolide_kontaktid.xls?ref_type=heads&inline=false`
+- Curricula: `https://gituja.eenet.ee/ehis/ehis1/failihoidla/-/raw/main/oppekavad.xlsx?ref_type=heads&inline=false`
+- Unconfirmed institution data: `https://gituja.eenet.ee/ehis/ehis1/failihoidla/-/raw/main/kinnitamised_EHIS_esileht.xls?ref_type=heads&inline=false`
+- Public registry UI fallback: https://enda.ehis.ee/avalik/
 
-## Outputs
-- Source-linked registry/indicator extract with field definitions and caveats.
+## Workflow
+1. Use the direct file matching the requested record type.
+2. Parse `.xls` with an OLE-compatible spreadsheet reader and `.xlsx` with an OOXML reader.
+3. Preserve original sheet names and columns; add normalized field names only in a separate output layer.
+4. Use the public registry UI only when the published snapshots omit a required field.
 
-## Access reality statement
-- Access type: `download files` + `UI export`.
-- Verified on 2026-02-24.
-- EHIS homepage exposes direct XLS/XLSX downloads and links to public registry views.
-
-## Primary endpoints
-- EHIS portal: https://www.ehis.ee/
-- EHIS public view entry: https://enda.ehis.ee/avalik/
-- EHIS institutions view: https://ehis.edu.ee/schools/educational-institutions
-- Published institutions contacts XLS: https://gituja.eenet.ee/ehis/ehis1/failihoidla/-/raw/main/koolide_kontaktid.xls?ref_type=heads&inline=false
-- Published curricula extract XLSX: https://gituja.eenet.ee/ehis/ehis1/failihoidla/-/raw/main/oppekavad.xlsx?ref_type=heads&inline=false
-- HaridusSilm portal: https://www.haridussilm.ee/ee/avaleht
-
-## Retrieval workflow (reproducible)
-1. Start at `ehis.ee` and identify the relevant public extract link (contacts/curricula/validation).
-2. Download XLS/XLSX file(s) directly from `gituja.eenet.ee` links.
-3. If needed fields are not in files, use `enda.ehis.ee/avalik` or `ehis.edu.ee` views and capture filtered UI output.
-4. For indicator context, export from HaridusSilm dashboards with explicit filters (level, region, year).
-5. Return normalized fields and keep original column names alongside mapped names.
-
-## Request/query contract
-- No auth required for listed endpoints.
-- EHIS file links are direct binary downloads (`application/octet-stream`).
-- UI registry views are browser-rendered; extraction may require rendered HTML parsing rather than static source.
+## Access reality
+- Public direct files with no authentication, verified 2026-07-14.
+- EHIS links to the three files from its homepage. The institution and unconfirmed-data files are legacy OLE `.xls`; curricula is OOXML `.xlsx`.
+- The server labels downloads `application/octet-stream`, so validate the file signature rather than relying on MIME type.
 
 ## Output schema expectations
-- `source_system` (`EHIS` or `HaridusSilm`)
-- `source_url`
-- `record_type`
-- `institution_id`/`school_name` (where available)
-- `curriculum_code`/`curriculum_name` (where available)
-- `status_or_indicator_name`
-- `value`
-- `period`
-- `publication_or_update_date`
+- Keep the source URL, retrieval timestamp, workbook/sheet name, and original EHIS columns.
+- Keep institution and curriculum identifiers exactly as stored.
 
 ## Limits and caveats
-- EHIS registry views are Estonian-first.
-- Registry snapshots may not align to calendar year boundaries.
-- Some interactive views may require browser execution to access full table content.
+- These are current published snapshots, not a historical time series.
+- Registry snapshots may update without a versioned URL; record retrieval time and file hash when reproducibility matters.
 
 ## Verification hooks
-- EHIS homepage lists direct download links including `koolide_kontaktid.xls` and `oppekavad.xlsx`.
-- Both published file URLs return HTTP 200 with binary content.
-- `enda.ehis.ee/avalik/` is reachable and serves public registry access.
+- Require OLE signature `D0 CF 11 E0 A1 B1 1A E1` for `.xls` and ZIP signature `PK 03 04` for `.xlsx`.
+- Reject HTML responses even when the URL ends in a spreadsheet extension.

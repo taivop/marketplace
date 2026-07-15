@@ -1,57 +1,36 @@
 ---
 name: crime-policy-statistics
-description: Use criminal policy statistics and studies portal for crime trends, victimization studies, and justice-policy evidence.
+description: Retrieve crime-policy studies, annual Crime in Estonia reports, and selected research datasets from the Ministry of Justice portal.
 ---
 
-# Crime Policy Statistics
+# Crime Policy Publications
 
-## Use when
-- You need official crime-policy statistics and research outputs.
-- You need crime trend context linked to policy analysis.
+## Access
 
-## Avoid when
-- You need real-time police incident feeds.
+- Study index: `https://www.kriminaalpoliitika.ee/et/statistika-ja-uuringud/uuringute-andmebaas`
+- Annual reports: `https://www.kriminaalpoliitika.ee/et/statistika-ja-uuringud/kuritegevus-eestis`
+- Research datasets: `https://www.kriminaalpoliitika.ee/et/statistika-ja-uuringud/uuringute-andmestikud`
+- Public HTML and linked files; no login is required.
 
-## Inputs
-- Topic area, period, and study/statistics scope.
+## Retrieve
 
-## Outputs
-- Structured indicators/study metadata and trend extracts.
+Use the study index for topic discovery, then fetch the linked study page or direct PDF. The annual-report page provides direct PDFs for the historical `Kuritegevus Eestis` series. The dataset page is a small index of study-specific pages; inspect each selected page for its actual downloadable files and methodology.
 
-## Primary endpoints
-- Statistics and studies: https://www.kriminaalpoliitika.ee/et/statistika-ja-uuringud/statistika-ja-uuringud
+Extract links from the relevant content section, resolve relative URLs against the page, and preserve the link text. Do not scrape the navigation menu as records.
 
-## Workflow
-1. Locate relevant statistical series or study output.
-2. Extract periodized metrics and definitions.
-3. Normalize categories across publications.
-4. Return structured output with methodology notes.
+## Return
 
-## Human setup (when needed)
-- If data is embedded in reports, walk user through report retrieval and continue from extracted tables.
+- For publications, return title, year/date, topic, authors or publisher when stated, file/page URL, source index, and retrieval time.
+- For datasets, also preserve format, variable/codebook links, population, fieldwork period, weighting, and access restrictions.
+- Keep survey indicators separate from police, prosecution, court, or prison administrative statistics.
 
-## Quality checks
-- Keep source methodology references with indicators.
-- Separate survey-based and administrative indicators.
+## Limits
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.kriminaalpoliitika.ee/et/statistika-ja-uuringud/statistika-ja-uuringud (HTTP 200, text/html;, file links detected: 0)
+- This is a publication index, not a current statistical API or real-time crime feed.
+- Coverage and metadata are inconsistent; many records are reports only, and the annual series on this portal is historical.
+- A linked study page does not guarantee an openly downloadable microdataset.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Verify
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
-
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
-
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the study index to contain study record links and direct PDF links.
+- Require the annual-report page to contain multiple `Kuritegevus Eestis` PDF links. Verify selected files begin with `%PDF-` before parsing.

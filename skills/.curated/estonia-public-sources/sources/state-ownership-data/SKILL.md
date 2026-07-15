@@ -1,60 +1,50 @@
 ---
 name: state-ownership-data
-description: Query official state-stakeholding and state-ownership policy pages for governance, ownership structure, and state-enterprise context.
+description: Extract current state-owned companies, ownership shares, purposes, sectors, and state-founded foundations from the Ministry of Finance tables.
 ---
 
 # State Ownership Data
 
-## Use when
-- You need state stakeholding and ownership-governance context.
-- You need official source references for state-enterprise ownership.
+## Access
 
-## Avoid when
-- You need company-level financial statements only.
+- `https://www.fin.ee/en/public-procurement-state-aid-and-assets/state-assets/state-stakeholdings`
+- Public server-rendered HTML; no login or browser JavaScript is required.
 
-## Inputs
-- Enterprise scope, sector, and analysis period.
+## Retrieve
 
-## Outputs
-- Structured ownership-governance dataset and source notes.
+Fetch the page with a normal user agent and parse the tables under `State-owned companies` and `Foundations`.
 
-## Primary endpoints
-- State assets/stakeholdings: https://www.fin.ee/en/public-procurement-state-aid-and-assets/state-assets/state-stakeholdings
+For operating companies, preserve:
 
-## Workflow
-1. Retrieve state-stakeholding references and linked materials.
-2. Extract enterprise, ownership-share, and governance fields where published.
-3. Normalize organization names and ownership categories.
-4. Return ownership map with confidence notes.
+- administering ministry
+- company name
+- `Share of state` and its as-of date
+- public-interest / income-earning purpose
+- field of activity
 
-## Human setup (when needed)
-- If core details are spread across linked documents/annexes, guide the user through opening/downloading them and continue from those files.
+For foundations, preserve:
 
-## Quality checks
-- Distinguish direct vs indirect state ownership.
-- Record publication date for each extracted source.
+- administering ministry
+- foundation name
+- number of founders
+- foundation date
+- stated goal
 
-## Limitations
-- A single machine-readable central register may not be publicly exposed from this entry page; use linked official materials as primary evidence.
+The narrative immediately above each table provides the reporting period and aggregate counts, assets, turnover, and employment. Associate those values with their stated as-of dates rather than treating the page retrieval date as the data date.
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.fin.ee/en/public-procurement-state-aid-and-assets/state-assets/state-stakeholdings (HTTP 200, text/html;, file links detected: 2)
+## Return
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- Return one row per company or foundation with the original organization name and table labels.
+- Include entity type, administering ministry, page update date, source URL, and retrieval time.
+- Keep decimal commas and ownership percentages as published; add normalized numeric columns only in addition to the originals.
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+## Limits
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- This is a current snapshot page, not a historical API.
+- The English and Estonian versions may be updated at different times; identify the language used.
+- Company-level financial statements are not supplied by these tables. Use the Business Register for company filings and baseline entity data.
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+## Verify
+
+- Require HTTP 200 `text/html` containing `State-owned companies`, `Share of state`, `Foundations`, and multiple named entities.
+- Require an explicit as-of period near the company table. Reject a navigation shell or policy-only page.

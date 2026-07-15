@@ -1,57 +1,46 @@
 ---
 name: political-party-membership
-description: Analyze Estonian political party membership trends using official Business Register party statistics and related public records.
+description: Retrieve current Estonian political-party and member lists from the e-Business Register, including direct CSV exports by registry code.
 ---
 
-# Political Party Membership Analysis
+# Political Party Membership
 
 ## Use when
-- You need party membership trend context by party and period.
-- You need official organization-level party statistics.
+- You need the official list of registered political parties.
+- You need a party's public current-member list or membership start dates.
 
 ## Avoid when
-- You need campaign finance flows (use ERJK funding skill).
+- You need campaign finance; use `party-funding-data`.
 
-## Inputs
-- Party scope and analysis period.
-
-## Outputs
-- Membership trend dataset and summary indicators.
-
-## Primary endpoint
-- Party statistics page: https://ariregister.rik.ee/eng/statistics/political_parties
+## Endpoints
+- Party chooser: https://ariregister.rik.ee/eng/political_party
+- Member list: `https://ariregister.rik.ee/eng/political_party/members/{registry_code}`
+- Direct CSV: `https://ariregister.rik.ee/eng/political_party/members/{registry_code}?download=CSV`
+- Historical Power BI statistics: https://ariregister.rik.ee/eng/statistics/political_parties
 
 ## Workflow
-1. Retrieve party statistics for selected periods.
-2. Extract membership-related fields.
-3. Harmonize party naming and period labels.
-4. Return trend-ready table and interpretation notes.
-
-## Human setup (when needed)
-- If tables require manual download, walk user through exact clicks and continue from exported file.
-
-## Quality checks
-- Preserve official party identifiers where available.
-- Clearly mark whether counts are point-in-time or annual summaries.
+1. Parse the chooser's party table and take the eight-digit registry code from each `/members/{registry_code}` link.
+2. Fetch the CSV directly for each requested party. Decode it as UTF-8 with BOM and parse it with semicolon delimiters.
+3. Preserve the party name and registry code from the chooser with every exported row.
+4. Use the Power BI page only for historical aggregates not present in the current lists.
 
 ## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://ariregister.rik.ee/eng/statistics/political_parties (HTTP 200, text/html;, file links detected: 0)
+- Public HTML and CSV, verified 2026-07-14.
+- The chooser exposes party/member links without JavaScript. The tested CSV response is `text/csv` and starts with the five-column member header.
 
 ## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+- No authentication or session cookie is required for the chooser or CSV export.
+- The CSV columns are `First name`, `Last name`, `Date of birth`, `Date of starting membership`, and `Suspension of membership in political party`.
+- HTML member pages paginate with `?page=N`, but the CSV export returns the full list; prefer CSV for data work.
 
 ## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Keep the registry code, party name, source URL, retrieval time, and original CSV fields.
+- For aggregate answers, report the retrieval date because the export is a current snapshot.
 
 ## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+- These are personal data published under the Political Parties Act. Retrieve and expose only fields necessary for the request; avoid republishing bulk member data when an aggregate suffices.
+- The current CSV is not a historical trend series. Do not infer join/leave history beyond the exported dates.
 
 ## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require `text/csv`, the expected semicolon-delimited header, and at least one data row.
+- Confirm that the registry code used in the export came from the current chooser.

@@ -1,10 +1,10 @@
 ---
 name: query
-description: "Query Estonian official public sources — äriregister, ehitisregister, kinnistusraamat, riigihanked, keskkonnaload, ametlikud teadaanded, riigiteataja, riigikogu, statistikaamet, KOTKAS, PRIA, maa-amet, haigekassa, and 133 sources total."
+description: "Route a question to a verified Estonian official public-data source and execute its API, download, or public web retrieval recipe."
 ---
 
 # Query: $ARGUMENTS
 
-Read [SKILL.md](../../SKILL.md) for routing workflow, then [SOURCE_MAP.md](../../SOURCE_MAP.md) to select the right source.
+Read [SKILL.md](../../SKILL.md) for the shared Codex and Claude workflow. Search [SOURCE_MAP.md](../../SOURCE_MAP.md), open the selected source recipe, and execute it.
 
-Prefer `curl`/`wget` over browser navigation. Cite source URLs and retrieval timestamps.
+Do not claim successful access unless the response contains the documented public records. Cite exact source URLs and retrieval timestamps.

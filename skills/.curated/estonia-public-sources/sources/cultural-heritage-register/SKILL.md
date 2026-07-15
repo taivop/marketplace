@@ -1,60 +1,42 @@
 ---
 name: cultural-heritage-register
-description: Query National Register of Cultural Monuments for protected heritage objects, status metadata, and historical protection context.
+description: Search Estonia's National Register of Cultural Monuments by registry number or text and extract public object details from its HTML records.
 ---
 
 # Cultural Heritage Register
 
-## Use when
-- You need official records of protected cultural heritage objects.
-- You need protection-status and location metadata.
+## Access
 
-## Avoid when
-- You need modern land-use planning decisions only.
+- Search and detail base: `https://register.muinas.ee/public.php?menuID=monument`
+- The public server-rendered search works without authentication or browser automation.
 
-## Inputs
-- Object name, type, location, registry identifier, and period.
+## Search
 
-## Outputs
-- Heritage-register extract with object-level protection metadata.
+POST form data to the base URL. Prefer the precise fields when known:
 
-## Primary endpoints
-- Register portal: https://register.muinas.ee/
+- `regnr`: cultural-monument registry number.
+- `name`: monument name.
+- `address`: address text.
+- `county[]`, `parish[]`, `type[]`, and `cm_type[]`: multi-value identifiers taken from the live form options.
 
-## Workflow
-1. Search heritage register by object/location/type.
-2. Extract registry IDs, protection status, and descriptive fields.
-3. Normalize object types and location labels.
-4. Return structured records with provenance.
+For a broad text search, POST `nameanddescription=<at least 3 characters>` and `quickseatch=true`; the misspelled field name is the site's actual contract.
 
-## Human setup (when needed)
-- If bot-protection blocks automated access, guide user through manual search/export and continue from provided files/results.
+The result is HTML. Parse the table headed `Reg. nr`, `Nimi`, `Tüüp`, `Liik`, `Omavalitsus`, and `Aadress`. Each row links to:
 
-## Quality checks
-- Preserve official monument identifiers.
-- Record data-access method used (direct fetch vs manual export).
+```text
+public.php?menuID=monument&action=view&id={regnr}
+```
 
-## Limitations
-- Automated access may intermittently trigger anti-bot controls; use manual fallback when needed.
+## Detail
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://register.muinas.ee/ (HTTP 200, text/html;, file links detected: 0)
+Fetch the absolute detail URL and parse labeled fields. Return the registry number, name, monument type and class, registration/protection dates, coordinates, condition, legal instruments, keywords, descriptions, address when present, and links to available detail, property, proceeding, grant, image, and document tabs.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Search and records are HTML, not JSON; decode HTML entities before extracting text.
+- Multi-select filter values are internal IDs. Read them from the current search form instead of guessing from labels.
+- A detail page can expose different tabs and fields by monument type.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+Require the requested registry number in both the result row and detail heading, plus the detail labels `Mälestise nimi` and `Mälestise registri number`.

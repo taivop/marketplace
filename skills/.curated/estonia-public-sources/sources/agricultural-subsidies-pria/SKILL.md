@@ -1,71 +1,39 @@
 ---
 name: agricultural-subsidies-pria
-description: Query PRIA support-recipient and open-data views for agricultural subsidies, recipient-level allocations, and support-program trends.
+description: Download recipient-level agricultural and rural support payments from PRIA's public CSV export.
 ---
 
-# Agricultural Subsidies (PRIA)
+# PRIA Support Recipients
 
-## Use when
-- You need support-recipient data for agricultural/rural subsidies.
-- You need program-level subsidy trend analysis.
+## Access
 
-## Avoid when
-- You only need non-agricultural state aid.
+- Filter page: `https://www.pria.ee/toetused/toetusesaajad`
+- Public, no authentication; labels and CSV headers are Estonian.
+- Coverage is the two latest completed financial years, not the current financial year.
 
-## Access reality
-- Public access type: UI filters + direct CSV/XLSX/PDF downloads.
-- Main machine-readable route: `Toetuste saajad` CSV export endpoint generated from filter form.
-- Language reality: key pages and column names are mostly Estonian.
+## Retrieve
 
-## Inputs
-- Year/period, support measure, recipient scope, and region filter.
+1. GET the filter page with any of these query parameters:
+   - `year`: a listed year or `all`
+   - `name`: recipient name
+   - `county`, `township`: values from the page's select controls
+   - `type=payed`
+   - `mp[<code>]=<code>`: one or more measure codes read from the current form
+2. Preserve the response cookies.
+3. Parse the CSV link whose path starts `/download/file/PRIA_export_`. The URL includes the selected filters plus transient `form_build_id` and `form_id=filter_receivers_form` values.
+4. GET that absolute URL with the same cookies. Do not construct or reuse an old export URL.
+5. Decode UTF-8 with BOM and parse as semicolon-delimited CSV after removing the first `sep=;` line.
 
-## Outputs
-- Recipient-program subsidy extract with period metadata.
+## Return
 
-## Primary endpoints
-- Support recipients UI: https://www.pria.ee/toetused/toetusesaajad
-- Open data hub page: https://www.pria.ee/avaandmed
-- Public registry data page: https://www.pria.ee/registrid/avalikud-andmed
+Preserve the original columns. Key fields include `Toetusesaaja nimi`, `Maakond`, `Omavalitsus`, `Meede/sekkumisviis/sektor`, measure code, the EAGF/EAFRD and co-financing amount columns, and `Finantsaasta`. Also return the filter-page URL, resolved export URL, filters, and retrieval time.
 
-## Retrieval workflow
-1. Open `https://www.pria.ee/toetused/toetusesaajad`.
-2. Set filters through query params or form fields (`year`, `county`, `township`, `name`, `type`, measure selections).
-3. Find the export link rendered on the page (`/download/file/PRIA_export_...csv?...form_id=filter_receivers_form...`).
-4. Download CSV and preserve raw header names.
-5. For registry-side statistics, open `https://www.pria.ee/registrid/avalikud-andmed` and download linked XLSX/PDF files.
+## Limits
 
-## Request contract
-- Support recipients export is a generated GET URL under `/download/file/PRIA_export_*.csv`.
-- Export URL contains transient form tokens (`form_build_id`) and must be taken from the rendered page state.
-- Common filters visible in form:
-  - `year`
-  - `county`
-  - `township`
-  - `name`
-  - `type`
-  - multiple measure keys like `mp[<code>]`
+- Rows ending in ` KOKKU` are recipient totals; do not mix them with measure rows.
+- Decimal commas and empty amount cells require locale-aware parsing.
+- Measure codes and available years change with each publication.
 
-## Output schema expectations
-- For support recipient CSV, preserve at least:
-  - recipient name (`Toetusesaaja nimi`)
-  - county and municipality (`Maakond`, `Omavalitsus`)
-  - measure/program labels (`Meede/sekkumisviis/sektor` etc.)
-  - amount columns (as published)
-  - period/year column
-- Keep source file metadata: URL, retrieval timestamp, and filter values used.
+## Verify
 
-## Limits and caveats
-- Column labels are Estonian and may include long measure descriptions.
-- CSV often begins with `sep=;` and semicolon delimiters.
-- Form tokenized export links are page-state dependent.
-- `avaandmed` page is mainly a directory and may route to multiple external/open-data locations.
-
-## Verification hooks
-- Verify CSV content type is `application/csv` or text CSV.
-- Verify first line is separator hint (`sep=;`) and second line contains header row.
-- Verify filtered export (for example `year=2024`) includes matching year values in data rows.
-
-## Quality checks
-- Preserve source measure names/codes.
-- Keep gross/net amount semantics exactly as published.
+Require `sep=;`, a header containing `Toetusesaaja nimi` and `Finantsaasta`, and at least one data row. For a single-year request, verify non-total rows carry that year.

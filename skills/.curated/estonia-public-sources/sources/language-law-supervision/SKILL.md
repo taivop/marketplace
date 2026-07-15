@@ -1,59 +1,33 @@
 ---
 name: language-law-supervision
-description: Retrieve language-law supervision and annual activity report records from Keeleamet oversight pages and embedded document tables.
+description: Retrieve Keeleamet and historical Language Inspectorate annual activity reports from the page's embedded document-table JSON.
 ---
 
-# Language-Law Supervision (Keeleamet)
+# Language-Law Supervision Reports
 
-## Use when
-- You need official language-law supervision context and annual oversight reports.
-- You need downloadable supervision/activity report files from Keeleamet.
+## Access
 
-## Avoid when
-- You need court judgments on language-law disputes (use judiciary/legal sources).
+- Report index: `https://www.keeleamet.ee/keeleameti-tegevused-ja-eesmargid/keeleseaduse-ja-teiste-keeleoskust-ja-keelekasutust-3`
+- Public HTML with embedded JSON and linked PDFs; no login is required.
 
-## Inputs
-- Year range.
-- Focus area (`tegevusaruanded`, supervision topic).
+## Retrieve
 
-## Outputs
-- Report index with document URLs, dates, and supervision context metadata.
+Find the `script type="application/json"` whose ID starts with `datatable-` and does not end in `-options`. Parse its row arrays. The first column contains report title, file size/type, and PDF link; the second contains an ISO timestamp and displayed insertion date; the third repeats the download link.
 
-## Access reality statement
-- Access type: `download files` + `UI copy-only`.
-- Verified on 2026-02-24.
-- Keeleamet oversight pages use embedded datatable JSON containing PDF report links.
+Resolve escaped relative links such as `\/sites\/default\/files\/documents\/...pdf` against `https://www.keeleamet.ee`. Derive the report year from the title, not the insertion date. Records before the agency rename use `Keeleinspektsioon` rather than `Keeleamet`.
 
-## Primary endpoints
-- Oversight section root: https://www.keeleamet.ee/keeleameti-tegevused-ja-eesmargid/keeleseaduse-ja-teiste-keeleoskust-ja-keelekasutust
-- Supervision results page: https://www.keeleamet.ee/keeleameti-tegevused-ja-eesmargid/keeleseaduse-ja-teiste-keeleoskust-ja-keelekasutust-3
+## Return
 
-## Retrieval workflow (reproducible)
-1. Open supervision results page (`...-3`) and locate datatable JSON script.
-2. Parse each row for report title, date, and file URL.
-3. Expand relative file links to absolute `https://www.keeleamet.ee/...`.
-4. Classify reports by year and institution naming (Keeleamet / Keeleinspektsioon historical records).
-5. Return structured report index and optional extracted KPI summary per report.
+- Preserve report title/year, insertion timestamp, institution name, PDF URL, file size when stated, page URL, and retrieval time.
+- Extract supervision counts or findings only from the report itself and retain table/page references.
 
-## Request/query contract
-- No auth required.
-- Report rows are embedded in `script type="application/json" id="datatable-..."`.
-- Row columns include title/link, insertion date, and download action link.
+## Limits
 
-## Output schema expectations
-- `source_page_url`
-- `report_title`
-- `report_date`
-- `report_url`
-- `institution_label`
-- `year`
-- `notes`
+- This source is an annual report archive, not case-level supervision data.
+- The datatable ID is generated and changes when the page is rebuilt; discover it by prefix and content.
+- Historical filenames contain spelling and encoding variations.
 
-## Limits and caveats
-- Content is Estonian and may include historical institution naming changes.
-- Some file names contain legacy spelling/format variations.
+## Verify
 
-## Verification hooks
-- Page title is `Järelevalvetulemused`.
-- Embedded datatable id observed: `datatable-d9c85bdb9fd9aead061de6c29867b7356307006a708a4723a9d19accccabc7e3`.
-- Rows include files such as `Keeleameti 2024. aasta tegevuse aruanne.pdf`.
+- Require a non-options `datatable-` JSON script with multiple report rows and PDF paths.
+- Require the newest linked report to return a PDF beginning with `%PDF-`; reject navigation links as report files.

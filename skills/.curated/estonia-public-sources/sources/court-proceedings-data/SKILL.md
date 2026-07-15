@@ -1,59 +1,53 @@
 ---
 name: court-proceedings-data
-description: Query public Estonian court-proceedings and related judicial information from Riigi Teataja court information pages.
+description: Query Riigi Teataja's public JSON endpoints for Estonian court decisions and court hearings.
 ---
 
-# Estonia Court Proceedings Data
+# Court Decisions and Hearings
 
-## Use when
-- You need publicly listed court proceedings information.
-- You need searchable judicial procedure records for legal-operational analysis.
+## Access
 
-## Avoid when
-- You need sealed/non-public case files.
+- Search UI: `https://www.riigiteataja.ee/et/otsing/kohtulahendid`
+- API base: `https://www.riigiteataja.ee/public-api/api/v1`
+- Public JSON POST endpoints; no login is required.
 
-## Inputs
-- Court/proceeding filters, date ranges, case keywords.
+## Retrieve
 
-## Outputs
-- Proceedings extract with case metadata and links.
+Post JSON to `/kohtuteave/otsing/kohtulahendid` for decisions. A minimal request is:
 
-## Primary endpoints
-- Proceedings listing: https://www.riigiteataja.ee/kohtulahendid/koik_menetlused.html
-- Court session search: https://www.riigiteataja.ee/kohtuteave/kohtuistungid_otsing.html
+```json
+{
+  "general": {
+    "searchInText": false,
+    "searchInTitle": false,
+    "searchText": "",
+    "searchText2": "",
+    "logicalOperator": "AND",
+    "morphSearch": false,
+    "sort": "toiminguNr",
+    "sortAscending": false
+  },
+  "precise": {"kohus": [], "seaduseSatted": {}}
+}
+```
 
-## Workflow
-1. Use proceedings/session search pages for scope.
-2. Extract case references, dates, and court identifiers.
-3. Normalize case metadata for downstream analysis.
-4. Return case/proceedings table with source links.
+Post the same `general` object to `/kohtuteave/otsing/kohtuistungid` with `precise: {"kohus": []}` for hearings. Useful precise decision fields include `lahendiKpAlgus`, `lahendiKpLopp`, `kohtunik`, `ecliNr`, `menetluseTyyp`, `menetlusliigid`, `kohtumenetluseLiik`, and `kohus`. Hearing fields include `istungiAegAlgus`, `istungiAegLopp`, `istungiLiik`, `istungiSaal`, `kohtunik`, `menetluseLiik`, and `kohus`.
 
-## Human setup (when needed)
-- If anti-bot/UI controls block direct extraction, guide user through manual query and ask them to share resulting URLs.
+Both responses contain `kokku` and up to 30 `tulemused`. Narrow the query with dates or court filters; do not treat the first response as a bulk export. A decision's public file is `GET /kohtuteave/kohtulahendid/{avalikustatudFailiId}/file`.
 
-## Quality checks
-- Do not infer legal outcomes unless explicitly listed.
-- Keep sensitive fields strictly within what is publicly exposed.
+## Return
 
-## Access reality
-- Public access type: Public webpage/document extraction.
-- Verification run: 2026-02-24.
-- https://www.riigiteataja.ee/kohtulahendid/koik_menetlused.html (HTTP 200, text/html;charset=utf-8, file links detected: 0)
-- https://www.riigiteataja.ee/kohtuteave/kohtuistungid_otsing.html (HTTP 200, text/html;charset=utf-8, file links detected: 0)
+- Decisions: preserve `objektId`, case number, ECLI when present, court, decision date, proceeding type, status, public-file ID/name, annotations, and source URL.
+- Hearings: preserve case number, court, judge, hearing time/type/room, status, title, query, and retrieval time.
+- Do not infer an outcome from a hearing listing or an annotation.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Publicity restrictions and redactions apply; this is not access to complete case files.
+- The result API returns 30 rows at a time and exposes no documented bulk pagination contract. Use focused searches.
+- Historical URLs ending in `koik_menetlused.html` and `kohtuistungid_otsing.html` now load the same JavaScript application; they are not data endpoints.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require HTTP 200 JSON with integer `kokku` and nonempty `tulemused` from both POST endpoints.
+- Require decision rows to contain `kohtuasjaNumber`, `objektId`, and `lahendiKuulutamiseAeg`; require hearing rows to contain `kohtuasjaNr`, `kohus`, and `istungiAeg`.

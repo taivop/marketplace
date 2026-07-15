@@ -1,57 +1,40 @@
 ---
 name: cyber-incidents-cert-ee
-description: Query CERT-EE public incident-handling and cyber situation resources for operational cybersecurity governance context.
+description: Retrieve RIA's monthly, quarterly, and annual public cyber-situation reports for Estonian incident counts, trends, attack types, and significant events.
 ---
 
-# CERT-EE Incident Context
+# RIA Cyber-Situation Reports
 
-## Use when
-- You need public cybersecurity incident and response context.
-- You need national cyber governance operational references.
+## Access
 
-## Avoid when
-- You need confidential incident data not publicly released.
+- Publication index: `https://www.ria.ee/en/cyber-security/cyberspace-analysis-and-prevention/situation-cyberspace`
+- Public server-rendered HTML linking report pages and PDFs; no login or JavaScript is required.
 
-## Inputs
-- Topic, incident type, period.
+## Retrieve
 
-## Outputs
-- Public CERT-EE references, advisories, and incident-context records.
+The index groups publications into:
 
-## Primary endpoint
-- CERT-EE section: https://www.ria.ee/en/cyber-security/handling-cyber-incidents-cert-ee
+- monthly summaries from 2023 onward
+- quarterly assessments through 2023
+- annual `Cyber Security in Estonia` reports
 
-## Workflow
-1. Locate relevant CERT-EE pages and advisories.
-2. Extract publication dates, incident categories, and guidance links.
-3. Normalize into timeline/context dataset.
-4. Return references with caveats on public scope.
+Select the period first. Resolve relative monthly report and `/sites/default/files/documents/...pdf` links against `https://www.ria.ee`. Newer monthly entries may be HTML articles while older entries are PDFs.
 
-## Human setup (when needed)
-- If incident details are only in downloadable advisories, guide user to fetch files and continue from them.
+Extract incident totals, handled/impactful incident distinctions, phishing/malware/DDoS and availability categories, significant events, comparison period, and any revised definitions. Use the annual reports for yearly totals and methodology; use monthly reports for timely operational context.
 
-## Quality checks
-- Distinguish incidents, advisories, and procedural guidance.
-- Record publication date and source URL for each item.
+## Return
 
-## Access reality
-- Public access type: UI page with direct downloadable files.
-- Verification run: 2026-02-24.
-- https://www.ria.ee/en/cyber-security/handling-cyber-incidents-cert-ee (HTTP 200, text/html;, file links detected: 1)
+- Preserve report period, publication date, metric label, count/rate, comparison value, definition, source URL, page/section, and retrieval time.
+- Keep observed incidents separate from reports received, incidents handled, vulnerabilities, and automated monitoring events.
+- Quote category labels exactly before adding normalized categories.
 
-## Request contract
-- Use the listed primary endpoints as authoritative entry points.
-- If API/query parameters are only visible in-browser, preserve exact request URL, params, and headers in output metadata.
-- If endpoint is UI-only, document click path and extraction method used.
+## Limits
 
-## Output schema expectations
-- Keep at least: source URL, retrieval timestamp, publication/update date (if available), title/record label, and extracted governance-relevant fields.
-- Preserve original field names when present in downloadable/API output.
+- Public reports are curated aggregates, not the confidential CERT-EE incident database.
+- Publication format varies between HTML and PDF across years.
+- The former incident-handling landing page describes CERT-EE procedures but does not itself provide incident records.
 
-## Limits and caveats
-- Confirm whether data is open-download, UI-only, or authenticated before claiming full access.
-- Separate narrative/guidance text from measurable records.
+## Verify
 
-## Verification hooks
-- Validate endpoint reachability and content type before extraction.
-- Validate that each extracted claim is linked to a concrete source URL.
+- Require the index to expose multiple monthly years, monthly report links, quarterly assessments, and annual cyber-security reports.
+- Require selected PDF files to begin `%PDF-`; for HTML reports, require the requested month/year and incident-related content.
