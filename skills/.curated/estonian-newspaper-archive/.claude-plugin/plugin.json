@@ -1,7 +1,7 @@
 {
   "name": "estonian-newspaper-archive",
   "version": "0.1.0",
-  "description": "Search and extract from Estonia's digitized newspaper archive DEA (dea.digar.ee) \u2014 full-text search across ~170 years of papers, OCR text, article clipping images, full-issue PDFs. USE WHEN user asks about old Estonian newspapers or ads, historical mentions/prices of something in print, DIGAR/DEA, or verifying a claim from an old paper.",
+  "description": "Search and retrieve material from Estonia's digitized newspaper archive DEA/DIGAR (dea.digar.ee), including full-text results, OCR text, document clipping images, and full-issue PDFs. Use when researching historical Estonian newspapers, locating archived articles, or verifying information against digitized newspaper sources.",
   "author": {
     "name": "Taivo Marketplace"
   }

@@ -1,6 +1,6 @@
 ---
 name: estonian-newspaper-archive
-description: Search and extract from Estonia's digitized newspaper archive DEA (dea.digar.ee) — full-text search across ~170 years of papers, OCR text, article clipping images, full-issue PDFs. USE WHEN user asks about old Estonian newspapers or ads, historical mentions/prices of something in print, DIGAR/DEA, or verifying a claim from an old paper.
+description: Search and retrieve material from Estonia's digitized newspaper archive DEA/DIGAR (dea.digar.ee), including full-text results, OCR text, document clipping images, and full-issue PDFs. Use when researching historical Estonian newspapers, locating archived articles, or verifying information against digitized newspaper sources.
 metadata:
   distribution:
     tier: curated
@@ -18,13 +18,13 @@ Base: `https://dea.digar.ee/` (Veridian). Be polite: ~1 s between requests, hone
 
 ```bash
 # 1. Search (25 hits/page; r=26 for page 2; quoted phrases work; year range optional)
-curl "https://dea.digar.ee/?a=q&hs=1&r=1&results=1&txq=%22kirju+koer%22&txf=txIN&ssnip=txt&dafyq=1990&datyq=1999"
+curl "https://dea.digar.ee/?a=q&hs=1&r=1&results=1&txq=<url_encoded_query>&txf=txIN&ssnip=txt&dafyq=<start_year>&datyq=<end_year>"
 # hit doc_ids are in: href="/?a=d&d=<doc_id>&srpos=..."
 
 # 2. OCR text of one document (strip tags to read)
 curl "https://dea.digar.ee/?a=d&d=<doc_id>&f=XML"
 
-# 3. Clipping image of the article/ad itself (~100 KB JPEG; best for reading/verifying)
+# 3. Clipping image of the document (~100 KB JPEG; best for reading/verifying)
 curl "https://dea.digar.ee/?a=is&oid=<doc_id>&type=blockimage&area=1&width=1400"
 
 # 4. Whole issue PDF (10–30 MB); issue_id = doc_id prefix before the first dot
@@ -42,22 +42,12 @@ header fragments, use the DEA page or issue PDF for those.
 
 ## Traps
 
-- **Restricted documents**: XML contains `piiratud` → searchable but image/
-  text blocked outside the library network (typically big commercial titles:
-  Õhtuleht, Postimees, Eesti Ekspress, Maaleht; varies by title and period).
-  Detect per document and skip — open regional papers carry the same national
-  content (incl. the same chain ads).
-- **Extracting numbers from OCR text**: the flattened XML embeds navigation
-  doc_ids — strip tokens matching `[a-z]+\d{8}[\d.]*` first, or you will
-  "extract" numbers from document ids. OCR also scrambles ad-grid layout, so
-  a number near a product name often belongs to the neighboring item:
-  **always verify against the clipping image (endpoint 3) before asserting.**
+- **Restricted documents**: XML containing `piiratud` is searchable, but its
+  text and images may be unavailable outside authorized networks. Detect and
+  report the restriction; do not claim to have retrieved blocked content.
+- **OCR structure**: flattened XML may include navigation document IDs. Remove
+  tokens matching `[a-z]+\d{8}[\d.]*` before parsing extracted data. OCR can
+  scramble page structure, so verify important quotations, names, dates, and
+  numbers against the clipping image or issue PDF.
 - **Block areas**: area 1 is often just the headline; try areas 1–3 (non-image
   or tiny response = no more areas).
-
-## Search strategy notes
-
-- Retail ads print both the promo price and the crossed-out regular price.
-- Soviet-era papers (open access) have almost no retail ads — prices appear
-  in currency-reform articles, price surveys, and factory advertorials; search
-  product + `kop`/`rbl`/`maksab` rather than expecting ad layouts.
