@@ -3,7 +3,6 @@ name: estonian-newspaper-archive
 description: Search and retrieve material from Estonia's digitized newspaper archive DEA/DIGAR (dea.digar.ee), including full-text results, OCR text, document clipping images, and full-issue PDFs. Use when researching historical Estonian newspapers, locating archived articles, or verifying information against digitized newspaper sources.
 metadata:
   distribution:
-    tier: curated
     publish_anthropic: true
     plugin_name: estonian-newspaper-archive
     plugin_version: 0.1.0

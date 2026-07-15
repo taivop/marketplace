@@ -3,7 +3,6 @@ name: estonia-government-public-sources
 description: "Route Estonian public-data questions to documented official APIs, downloads, and reproducible public web interfaces. Use for Estonian statistics, legislation, parliament, registries, public finance, procurement, environment, health, transport, municipal records, and other official data retrieval."
 metadata:
   distribution:
-    tier: curated
     publish_anthropic: true
     plugin_name: estonia-public-sources
     plugin_version: 1.4.0

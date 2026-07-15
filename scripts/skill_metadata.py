@@ -17,7 +17,6 @@ VERSION_RE = re.compile(r"^\d+\.\d+\.\d+$")
 
 @dataclass
 class DistributionSettings:
-    tier: str
     publish_anthropic: bool
     plugin_name: str
     plugin_version: str
@@ -122,17 +121,11 @@ def _as_bool(value: Any, default: bool) -> bool:
 
 
 def _distribution_settings(
-    folder_name: str, tier: str, metadata: dict[str, Any]
+    folder_name: str, metadata: dict[str, Any]
 ) -> DistributionSettings:
     distribution = metadata.get("distribution", {})
     if not isinstance(distribution, dict):
         distribution = {}
-
-    declared_tier = _as_str(distribution.get("tier"), tier)
-    if declared_tier not in ("curated", "experimental"):
-        raise ValueError(
-            f"Invalid metadata.distribution.tier '{declared_tier}' for {folder_name}"
-        )
 
     plugin_name = _as_str(distribution.get("plugin_name"), folder_name) or folder_name
     if not PLUGIN_NAME_RE.match(plugin_name):
@@ -148,14 +141,10 @@ def _distribution_settings(
             f"Invalid plugin_version '{plugin_version}' in {folder_name}; expected X.Y.Z"
         )
 
-    publish_default = declared_tier == "curated"
-    publish_anthropic = _as_bool(
-        distribution.get("publish_anthropic"), publish_default
-    )
+    publish_anthropic = _as_bool(distribution.get("publish_anthropic"), True)
     plugin_author = _as_str(distribution.get("plugin_author"))
 
     return DistributionSettings(
-        tier=declared_tier,
         publish_anthropic=publish_anthropic,
         plugin_name=plugin_name,
         plugin_version=plugin_version,
@@ -166,44 +155,48 @@ def _distribution_settings(
 def iter_skill_packages(root: Path | None = None) -> list[SkillPackage]:
     repo = root or repo_root()
     packages: list[SkillPackage] = []
+    skills_dir = repo / "skills"
 
-    for tier in ("curated", "experimental"):
-        tier_dir = repo / "skills" / f".{tier}"
-        if not tier_dir.exists():
+    if not skills_dir.is_dir():
+        return packages
+
+    package_dirs = sorted(
+        path
+        for path in skills_dir.iterdir()
+        if path.is_dir() and not path.name.startswith(".")
+    )
+    for child in package_dirs:
+        skill_md = child / "SKILL.md"
+        if not skill_md.is_file():
             continue
 
-        for child in sorted(p for p in tier_dir.iterdir() if p.is_dir()):
-            skill_md = child / "SKILL.md"
-            if not skill_md.is_file():
-                continue
+        fm = read_frontmatter(skill_md)
+        skill_name = _as_str(fm.get("name"), "") or ""
+        description = _as_str(fm.get("description"), "") or ""
+        if not skill_name:
+            raise ValueError(f"Missing frontmatter name in {skill_md}")
+        if not description:
+            raise ValueError(f"Missing frontmatter description in {skill_md}")
 
-            fm = read_frontmatter(skill_md)
-            skill_name = _as_str(fm.get("name"), "") or ""
-            description = _as_str(fm.get("description"), "") or ""
-            if not skill_name:
-                raise ValueError(f"Missing frontmatter name in {skill_md}")
-            if not description:
-                raise ValueError(f"Missing frontmatter description in {skill_md}")
-
-            metadata = fm.get("metadata", {})
-            if metadata is None:
-                metadata = {}
-            if not isinstance(metadata, dict):
-                raise ValueError(
-                    f"metadata must be a mapping in {skill_md}, got {type(metadata)}"
-                )
-
-            settings = _distribution_settings(child.name, tier, metadata)
-
-            packages.append(
-                SkillPackage(
-                    path=child,
-                    rel_path=child.relative_to(repo),
-                    folder_name=child.name,
-                    skill_name=skill_name,
-                    description=description,
-                    distribution=settings,
-                )
+        metadata = fm.get("metadata", {})
+        if metadata is None:
+            metadata = {}
+        if not isinstance(metadata, dict):
+            raise ValueError(
+                f"metadata must be a mapping in {skill_md}, got {type(metadata)}"
             )
+
+        settings = _distribution_settings(child.name, metadata)
+
+        packages.append(
+            SkillPackage(
+                path=child,
+                rel_path=child.relative_to(repo),
+                folder_name=child.name,
+                skill_name=skill_name,
+                description=description,
+                distribution=settings,
+            )
+        )
 
     return packages

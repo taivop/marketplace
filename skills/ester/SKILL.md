@@ -3,7 +3,6 @@ name: ester
 description: Searches the Estonian library catalog ESTER (ester.ee) to find books, check availability, and locate them in specific library branches. USE WHEN user asks to find a book in Estonian libraries, check if a book is available, find where to pick up a library book, search ESTER, or mentions Estonian library branches like Kalamaja, Keskraamatukogu, Tartu, etc.
 metadata:
   distribution:
-    tier: curated
     publish_anthropic: true
     plugin_name: ester
     plugin_version: 0.1.0

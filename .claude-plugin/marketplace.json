@@ -6,7 +6,7 @@
   "plugins": [
     {
       "name": "coloring-book",
-      "source": "./skills/.curated/coloring-book",
+      "source": "./skills/coloring-book",
       "description": "Generate a printable, text-free story coloring book PDF from a story idea, with consistent characters and real-landmark backgrounds. Use when the user asks to create a coloring book, coloring pages, or a wordless picture-story PDF. Requires an OpenAI API key.",
       "author": {
         "name": "Taivo Marketplace"
@@ -14,7 +14,7 @@
     },
     {
       "name": "ester",
-      "source": "./skills/.curated/ester",
+      "source": "./skills/ester",
       "description": "Searches the Estonian library catalog ESTER (ester.ee) to find books, check availability, and locate them in specific library branches. USE WHEN user asks to find a book in Estonian libraries, check if a book is available, find where to pick up a library book, search ESTER, or mentions Estonian library branches like Kalamaja, Keskraamatukogu, Tartu, etc.",
       "author": {
         "name": "Taivo Marketplace"
@@ -22,7 +22,7 @@
     },
     {
       "name": "estonia-public-sources",
-      "source": "./skills/.curated/estonia-public-sources",
+      "source": "./skills/estonia-public-sources",
       "description": "Route Estonian public-data questions to documented official APIs, downloads, and reproducible public web interfaces. Use for Estonian statistics, legislation, parliament, registries, public finance, procurement, environment, health, transport, municipal records, and other official data retrieval.",
       "author": {
         "name": "Taivo Marketplace"
@@ -30,7 +30,7 @@
     },
     {
       "name": "estonian-newspaper-archive",
-      "source": "./skills/.curated/estonian-newspaper-archive",
+      "source": "./skills/estonian-newspaper-archive",
       "description": "Search and retrieve material from Estonia's digitized newspaper archive DEA/DIGAR (dea.digar.ee), including full-text results, OCR text, document clipping images, and full-issue PDFs. Use when researching historical Estonian newspapers, locating archived articles, or verifying information against digitized newspaper sources.",
       "author": {
         "name": "Taivo Marketplace"
@@ -38,7 +38,7 @@
     },
     {
       "name": "estonian-store-search",
-      "source": "./skills/.curated/estonian-store-search",
+      "source": "./skills/estonian-store-search",
       "description": "Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.",
       "author": {
         "name": "Taivo Marketplace"
@@ -46,7 +46,7 @@
     },
     {
       "name": "subtract",
-      "source": "./skills/.curated/subtract",
+      "source": "./skills/subtract",
       "description": "Critique a plan, design, process, or document through a subtractive lens. USE WHEN user asks to simplify, cut, focus, reduce, tighten, or critique something for bloat \u2014 or when reviewing plans, processes, or designs that feel overbuilt.",
       "author": {
         "name": "Taivo Marketplace"

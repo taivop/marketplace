@@ -19,7 +19,7 @@ COUNT_CLAIM_RE = re.compile(
 
 def main() -> int:
     root = repo_root()
-    package = root / "skills" / ".curated" / "estonia-public-sources"
+    package = root / "skills" / "estonia-public-sources"
     source_root = package / "sources"
     map_path = package / "SOURCE_MAP.md"
     smoke_path = root / "scripts" / "smoke_estonia_public_sources.py"

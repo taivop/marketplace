@@ -13,12 +13,10 @@ It is not limited to public-data skills. Any useful, reusable agent plugin can l
 .
 ├── .claude-plugin/marketplace.json
 ├── skills/
-│   ├── .curated/
-│   │   └── <plugin-package>/
-│   │       ├── SKILL.md
-│   │       ├── .claude-plugin/plugin.json
-│   │       └── ...
-│   └── .experimental/
+│   └── <plugin-package>/
+│       ├── SKILL.md
+│       ├── .claude-plugin/plugin.json
+│       └── ...
 ├── scripts/
 │   ├── generate_plugin_manifests.py
 │   ├── generate_marketplace.py
@@ -37,7 +35,6 @@ Expected frontmatter fields:
    - `name`
    - `description`
 2. Distribution metadata (recommended and used by generators):
-   - `metadata.distribution.tier`: `curated` or `experimental`
    - `metadata.distribution.publish_anthropic`: `true`/`false`
    - `metadata.distribution.plugin_name`: Anthropic plugin name
    - `metadata.distribution.plugin_version`: SemVer (`X.Y.Z`)
@@ -52,9 +49,7 @@ Do not hand-edit generated files. Run generators instead.
 
 ## Add A New Plugin Package
 
-1. Create package directory under either:
-   - `skills/.curated/<slug>`
-   - `skills/.experimental/<slug>`
+1. Create the package directory at `skills/<slug>`.
 2. Add `SKILL.md` with valid frontmatter.
 3. Add any package-specific resources (`agents/`, `scripts/`, `references/`, `assets/`, docs).
 4. Set `metadata.distribution.*` values in `SKILL.md`.
@@ -92,6 +87,4 @@ A PR should fail if:
 
 1. Keep package names and plugin names kebab-case.
 2. Keep version increments explicit in `metadata.distribution.plugin_version`.
-3. Use `.curated` for stable/default offerings.
-4. Use `.experimental` for work-in-progress plugins.
-5. Keep package-specific operational rules inside that package's own docs (`README.md`, `AGENTS.md`).
+3. Keep package-specific operational rules inside that package's own docs (`README.md`, `AGENTS.md`).

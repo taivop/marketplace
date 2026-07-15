@@ -3,7 +3,6 @@ name: estonian-store-search
 description: Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.
 metadata:
   distribution:
-    tier: curated
     publish_anthropic: true
     plugin_name: estonian-store-search
     plugin_version: 0.5.0

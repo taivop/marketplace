@@ -3,7 +3,6 @@ name: coloring-book
 description: Generate a printable, text-free story coloring book PDF from a story idea, with consistent characters and real-landmark backgrounds. Use when the user asks to create a coloring book, coloring pages, or a wordless picture-story PDF. Requires an OpenAI API key.
 metadata:
   distribution:
-    tier: curated
     publish_anthropic: true
     plugin_name: coloring-book
     plugin_version: 0.2.0
