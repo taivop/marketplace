@@ -29,6 +29,14 @@
       }
     },
     {
+      "name": "estonian-newspaper-archive",
+      "source": "./skills/.curated/estonian-newspaper-archive",
+      "description": "Search and retrieve material from Estonia's digitized newspaper archive DEA/DIGAR (dea.digar.ee), including full-text results, OCR text, document clipping images, and full-issue PDFs. Use when researching historical Estonian newspapers, locating archived articles, or verifying information against digitized newspaper sources.",
+      "author": {
+        "name": "Taivo Marketplace"
+      }
+    },
+    {
       "name": "estonian-store-search",
       "source": "./skills/.curated/estonian-store-search",
       "description": "Search Estonian building supply stores (Bauhof, Ehituse ABC, Decora, K-Rauta, Bauhaus, Depo), grocery stores (Prisma, Rimi, Selver), home furnishing (IKEA), and second-hand marketplaces (Vinted, Yaga) for products, prices, and stock. USE WHEN user asks to find products at Estonian stores, compare prices across them, or check availability.",

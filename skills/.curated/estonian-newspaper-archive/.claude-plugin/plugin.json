@@ -1,0 +1,8 @@
+{
+  "name": "estonian-newspaper-archive",
+  "version": "0.1.0",
+  "description": "Search and retrieve material from Estonia's digitized newspaper archive DEA/DIGAR (dea.digar.ee), including full-text results, OCR text, document clipping images, and full-issue PDFs. Use when researching historical Estonian newspapers, locating archived articles, or verifying information against digitized newspaper sources.",
+  "author": {
+    "name": "Taivo Marketplace"
+  }
+}
