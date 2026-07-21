@@ -5,7 +5,7 @@ metadata:
   distribution:
     publish_anthropic: true
     plugin_name: estonian-store-search
-    plugin_version: 0.5.0
+    plugin_version: 0.5.1
     plugin_author: Taivo Marketplace
 ---
 
@@ -17,6 +17,28 @@ Grocery stores: Prisma, Rimi, Selver.
 Home furnishing: IKEA.
 Second-hand marketplaces: Vinted, Yaga.
 
+## Verify every product link before returning it
+
+Search APIs are candidate discovery, not final proof that a product page or its
+availability is current. Before returning a product URL:
+
+1. Open the final public URL, follow redirects, and verify that the rendered
+   product name or stable identifier (SKU, EAN, item number) matches the search
+   record. Also check the requested variant, dimensions, and pack size.
+2. Reject 404 pages, generic storefront shells that never hydrate, product pages
+   that say the item is unavailable, and pages that only show substitute items.
+3. Let the detail page override a stale search index when price or availability
+   conflicts. Record the date checked for price/stock comparisons.
+4. Never invent a public URL from a slug or replace an API/staging hostname
+   without applying the store-specific rule below and verifying the result.
+5. Some sites block command-line clients. If `curl` reaches an anti-bot page or
+   a JavaScript shell, use an available browser-capable tool and inspect the
+   rendered title/name and availability. If no browser is available, omit the
+   link or label it explicitly as unverified; do not call it verified.
+
+For dynamic pages, an initial generic `<title>` is not sufficient. Wait for the
+product view to render, then verify the visible product identity.
+
 ## Bauhof — Magento GraphQL
 
 ```bash
@@ -25,7 +47,12 @@ curl -s -X POST "https://www.bauhof.ee/api/magento/customQuery" \
   -d '{"query":"query{products(search:\"SEARCH_TERM\",pageSize:10){items{sku name stock_status price_range{minimum_price{final_price{value currency}regular_price{value currency}}}url_key}total_count}}","queryVariables":{}}'
 ```
 
-Product URL: `https://www.bauhof.ee/{url_key}`. Stock: `stock_status` (`IN_STOCK` / `OUT_OF_STOCK`). Price: `final_price.value`.
+Product URL: `https://www.bauhof.ee/et/p/{sku}/{url_key}`. The bare
+`https://www.bauhof.ee/{url_key}` form redirects to the English site and can
+produce a 404. Verify the rendered heading and `Tootekood` against `name` and
+`sku`. Stock: `stock_status` (`IN_STOCK` / `OUT_OF_STOCK`); this is aggregate
+availability, so use the detail page's purchase controls or store-availability
+view when location-specific stock matters. Price: `final_price.value`.
 
 ## Ehituse ABC — Klevu Search
 
@@ -35,7 +62,9 @@ curl -s -X POST "https://eucs32v2.ksearchnet.com/cs/v2/search" \
   -d '{"context":{"apiKeys":["klevu-168180264665813326"]},"recordQueries":[{"id":"productSearch","typeOfRequest":"SEARCH","settings":{"query":{"term":"SEARCH_TERM"},"typeOfRecords":["KLEVU_PRODUCT"],"limit":10,"sort":"RELEVANCE"}}]}'
 ```
 
-Product URL: `url`. Stock: `inStock` (`yes`/`no`). Price: `salePrice`. Results in `queryResults[0].records`.
+Product URL: `url`. Stock: `inStock` (`yes`/`no`). Price: `salePrice`. Results
+in `queryResults[0].records`. Open the returned URL and verify its product name
+or SKU before including it; Klevu records can outlive the storefront page.
 
 ## Decora — Klevu Search
 
@@ -45,7 +74,10 @@ curl -s -X POST "https://decoracsv2.ksearchnet.com/cs/v2/search" \
   -d '{"context":{"apiKeys":["klevu-159479682665411675"]},"recordQueries":[{"id":"productSearch","typeOfRequest":"SEARCH","settings":{"query":{"term":"SEARCH_TERM"},"typeOfRecords":["KLEVU_PRODUCT"],"limit":10,"sort":"RELEVANCE"}}]}'
 ```
 
-Same response format as Ehituse ABC. Extra fields: `stock_availability` (store locations), `volume_l`, `shortDesc`, `usage_indoor_outdoor`.
+Same response format as Ehituse ABC. Extra fields: `stock_availability` (store
+locations), `volume_l`, `shortDesc`, `usage_indoor_outdoor`. Verify the returned
+URL's rendered product name/SKU and do not rely on a successful HTTP status
+alone, because some storefronts serve branded not-found pages with status 200.
 
 ## K-Rauta — LupaSearch
 
@@ -55,7 +87,20 @@ curl -s -X POST "https://api.lupasearch.com/v1/query/j9gky3z0nx3z" \
   -d '{"searchText":"SEARCH_TERM","limit":10}'
 ```
 
-Returns name, price, URL, product code, brand, categories, images. Results in top-level array. Stock: items with `tags: []` are out of stock; in-stock items have tags like `"in-warehouse"`, `"online-only"`, or `"new-product"`.
+Results are in `.items[]` (the top level is an object with `items`, `facets`,
+`filters`, `total`, and other search metadata). Useful fields include:
+
+- Product name: `title.et`
+- Relative product URL: `url.et` (join with `https://www.k-rauta.ee`)
+- Product code: `product_code`
+- Prices: `price_groups.default.price` and `price_groups.loyalty.price`
+- Search availability hints: `in_stock`, `tags`, and `delivery_methods`
+
+Do **not** treat `tags`, including `"in-shops"`, or `in_stock` as final stock
+truth. Search records can remain positive while the rendered product page says
+`Vabandame, antud toode pole hetkel saadaval` and shows substitutes. Open the
+detail URL and exclude the item if that message appears or no purchase option is
+available. Keep regular and loyalty prices clearly distinguished.
 
 ## Bauhaus — Magento REST (2-step)
 
@@ -69,7 +114,17 @@ Step 2 — get details (entity IDs from step 1):
 curl -s "https://secure.qs-m2web.bauhaus.ee/rest/V1/products-render-info?searchCriteria[filterGroups][0][filters][0][field]=entity_id&searchCriteria[filterGroups][0][filters][0][value]=ID1,ID2,ID3&searchCriteria[filterGroups][0][filters][0][condition_type]=in&storeId=13&currencyCode=EUR"
 ```
 
-Returns name (from image label), price, image URLs. No stock status, no product URL slug, no description.
+Results are in `.items[]`. Each item currently includes `name`,
+`price_info.final_price`, `price_info.regular_price`, `is_salable`, `images`, and
+`url`. The returned `url` may use the non-public
+`https://headless-staging.bauhaus.ee` hostname. Build the public candidate by
+keeping its path and using `https://www.bauhaus.ee`, then verify the rendered
+page before returning it. Do not expose the staging URL.
+
+`is_salable == "1"` means the item can be sold; it is not a quantity. The public
+detail page may expose stronger signals such as `Laos (N)`, delivery status, and
+Click & Collect availability. Command-line requests may receive a Vercel
+security response, so use a browser-capable tool for verification when needed.
 
 ## Depo — GraphQL
 
@@ -79,7 +134,17 @@ curl -s 'https://online.depo.ee/graphql' \
   -d '{"query":"{ products(searchString: \"SEARCH_TERM\", start: 0, rows: 10) { edges { node { id name primaryBarcode specificationBrand prices { yellow { priceWithVat unit } orange { priceWithVat priceQuantity unit } } stockItems { locationAddress quantity } } } } }"}'
 ```
 
-Name, brand, barcode, per-store stock quantities (1 Estonian store: Tallinn Veskiposti). Two price tiers: `yellow` (retail), `orange` (bulk/loyalty with `priceQuantity` threshold). Prices include 24% VAT.
+Name, brand, barcode, and stock counters associated with Tallinn Veskiposti.
+Two price tiers: `yellow` (retail), `orange` (bulk price with `priceQuantity`
+threshold). Prices include 24% VAT.
+
+Product URL: `https://online.depo.ee/product/{id}`. The page is client-rendered,
+so wait for hydration and verify the visible name/barcode. DEPO's product page
+explicitly says its availability information applies to online orders and does
+not guarantee the corresponding quantity in the physical store. Report
+`stockItems.quantity` as online availability associated with the location, not
+as confirmed shelf stock. The detail page's `Saadaval`/purchase state is the
+final online-availability check.
 
 ## Prisma (grocery) — GraphQL
 
