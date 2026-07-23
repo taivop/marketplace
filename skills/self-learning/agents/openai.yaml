@@ -1,0 +1,4 @@
+interface:
+  display_name: "Self-Learning"
+  short_description: "Self-coaching system for work-relevant skill growth"
+  default_prompt: "Use $self-learning to plan today's learning session."
