@@ -53,6 +53,14 @@
       }
     },
     {
+      "name": "self-learning",
+      "source": "./skills/self-learning",
+      "description": "Structured self-coaching system for work-relevant skill growth -- 2-3 month learning goals, 1-2 week themes, daily active-practice sessions, weekly reviews, and accountability, tracked as markdown files. USE WHEN user asks what to learn next for work, wants a learning plan or routine, asks to plan or review a learning session, wants accountability for learning consistency, or manages multiple learning projects. Not for open-ended reflection or talking things through (that is the coach skill).",
+      "author": {
+        "name": "Taivo Marketplace"
+      }
+    },
+    {
       "name": "subtract",
       "source": "./skills/subtract",
       "description": "Critique a plan, design, process, or document through a subtractive lens. USE WHEN user asks to simplify, cut, focus, reduce, tighten, or critique something for bloat \u2014 or when reviewing plans, processes, or designs that feel overbuilt.",
