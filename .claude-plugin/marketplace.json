@@ -5,6 +5,14 @@
   },
   "plugins": [
     {
+      "name": "coach",
+      "source": "./skills/coach",
+      "description": "Neutral thinking partner for the user. USE WHEN the user asks for coaching, help with reflection, is struggling to get started or understand a fuzzy topic, wants to talk something through, wants to talk out loud, asks for a Socratic mode, is struggling to phrase a concrete problem or idea, seems emotionally loaded about something, or similar -- or might benefit from a coach'y approach.",
+      "author": {
+        "name": "Taivo Marketplace"
+      }
+    },
+    {
       "name": "coloring-book",
       "source": "./skills/coloring-book",
       "description": "Generate a printable, text-free story coloring book PDF from a story idea, with consistent characters and real-landmark backgrounds. Use when the user asks to create a coloring book, coloring pages, or a wordless picture-story PDF. Requires an OpenAI API key.",
