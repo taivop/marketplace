@@ -5,7 +5,7 @@ metadata:
   distribution:
     publish_anthropic: true
     plugin_name: estonia-public-sources
-    plugin_version: 1.4.0
+    plugin_version: 1.5.0
     plugin_author: Taivo Marketplace
 ---
 

@@ -1,6 +1,6 @@
 {
   "name": "estonia-public-sources",
-  "version": "1.4.0",
+  "version": "1.5.0",
   "description": "Route Estonian public-data questions to documented official APIs, downloads, and reproducible public web interfaces. Use for Estonian statistics, legislation, parliament, registries, public finance, procurement, environment, health, transport, municipal records, and other official data retrieval.",
   "author": {
     "name": "Taivo Marketplace"

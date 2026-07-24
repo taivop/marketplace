@@ -17,6 +17,7 @@ description: Query the Riigikogu open data API for draft laws, votes, members, a
 - Draft search: `https://api.riigikogu.ee/api/volumes/drafts?initiatedStartDate=2026-01-01&initiatedEndDate=2026-01-31&lang=EN&page=0&size=20`
 - Draft detail: `https://api.riigikogu.ee/api/volumes/drafts/{uuid}?lang=EN&querySteno=false`
 - Votes: `https://api.riigikogu.ee/api/votings?startDate=2025-01-01&endDate=2025-01-31&lang=EN`
+- One member's votes (with each decision inline): `https://api.riigikogu.ee/api/votings/plenary-member/{memberUuid}?startDate=2026-05-01&endDate=2026-06-30&lang=ET&size=100&page=0`
 - Plenary agendas: `https://api.riigikogu.ee/api/agenda/plenary?startDate=2025-01-01&endDate=2025-01-31&lang=EN`
 - Stenograms: `https://api.riigikogu.ee/api/steno/verbatims?startDate=2025-01-01&endDate=2025-01-31`
 - Public calendar fallback: https://www.riigikogu.ee/tegevus/kalender/
@@ -58,3 +59,83 @@ description: Query the Riigikogu open data API for draft laws, votes, members, a
 - For the agenda example, require each sitting to contain `uuid`, `sittingDateTime`, and `agendaItems`.
 - Confirm returned dates overlap the requested window.
 - Treat HTTP 429 as rate limiting, not evidence that the endpoint is unavailable.
+
+## Weak-model workflow notes (added 2026-07-24, issue #8; member-votings rewrite issue #15)
+
+- The API rate-limits aggressively: on HTTP 429 or an HTML error page, back off and retry the SAME request before changing approach.
+- **Voting history for one member: use `/api/votings/plenary-member/{memberUuid}`.** It returns that member's votings paged, each row already carrying the member's `decision` (poolt/vastu/erapooletu/ei hääletanud/puudub) plus the `relatedDraft` title and mark. This means **no per-voting `/api/votings/{uuid}` detail fetch** — the old N+1 fan-out was what spiralled into 429s. The whole answer is 2–3 requests total: one `/api/plenary-members` list to resolve the UUID by name, then one page (100 votings) — a second page only if the window has 100+ votings.
+- Notes on this endpoint: it ignores `sort`, returning votings oldest→newest; page with a hard cap and, when truncating, keep the LAST pages (most recent votings). `_embedded.content` holds the rows; `page.totalPages`/`page.totalElements` drive paging. `type.value === "Kohaloleku kontroll"` rows are presence checks, not substantive votes.
+- Keep a single 429-retry budget for the whole run so a rate-limited run degrades to a partial answer (with an explicit "(osaline — API piiras päringute arvu)" note) instead of retrying to the step cap. `save()` intermediate pages so a later run_code call can `load()` instead of refetching.
+
+```js
+import { get, show, save, load, sleep } from "./kratt.mjs";
+
+// One shared 429-retry budget for the whole run. When it's spent, stop retrying
+// and answer from what we already have — never spiral to the step cap (issue #15).
+let retryBudget = 5;
+async function getBudgeted(url) {
+  let delay = 1500;
+  for (;;) {
+    try {
+      return await get(url);
+    } catch (e) {
+      if (!String(e).includes("429") || retryBudget <= 0) throw e;
+      retryBudget--;
+      await sleep(delay);
+      delay = Math.min(delay * 2, 12000); // adaptive backoff
+    }
+  }
+}
+
+const NAME = "Ees Nimi";
+const startDate = "2026-05-24", endDate = "2026-07-24";
+
+// 1) Resolve the member UUID by name — one request. The list is ~400 KB but a
+//    single fetch; filter in code, never print it whole.
+const members = await getBudgeted("https://api.riigikogu.ee/api/plenary-members?lang=ET");
+const member = members.find((m) => m.fullName === NAME);
+if (!member) throw new Error("member not found: " + NAME);
+
+// 2) Fetch the member's OWN voting history directly — decisions are inline, so
+//    there is NO per-voting detail fetch. Page with a hard cap; the API returns
+//    votings oldest→newest and ignores `sort`, so when the cap truncates we keep
+//    the LAST pages (most recent votings).
+const base = "https://api.riigikogu.ee/api/votings/plenary-member/" + member.uuid;
+const pageUrl = (p) => `${base}?startDate=${startDate}&endDate=${endDate}&lang=ET&size=100&page=${p}`;
+const MAX_PAGES = 3; // hard cap: up to 300 votings, ample for "last couple months"
+
+const first = await getBudgeted(pageUrl(0));
+const totalPages = first?.page?.totalPages ?? 1;
+let wanted = Array.from({ length: totalPages }, (_, i) => i);
+let truncated = false;
+if (wanted.length > MAX_PAGES) { wanted = wanted.slice(-MAX_PAGES); truncated = true; }
+
+const byPage = { 0: first };
+for (const p of wanted) {
+  if (byPage[p]) continue;
+  try { byPage[p] = await getBudgeted(pageUrl(p)); }
+  catch { truncated = true; break; } // rate-limited out — keep what we have
+}
+
+const rows = [];
+for (const p of wanted) {
+  for (const v of byPage[p]?._embedded?.content ?? []) {
+    rows.push({
+      date: v.startDateTime?.slice(0, 10),
+      type: v.type?.value,
+      decision: v.decision?.value,
+      title: v.description,
+      draft: v.relatedDraft ? `${v.relatedDraft.title} (${v.relatedDraft.mark})` : null,
+    });
+  }
+}
+rows.reverse(); // newest first for display
+
+await save("member_votings.json", { member: member.fullName, startDate, endDate, truncated, rows });
+
+// Presence checks ("Kohaloleku kontroll") are noise; substantive votes are the answer.
+const substantive = rows.filter((r) => r.type !== "Kohaloleku kontroll");
+show({ member: member.fullName, window: [startDate, endDate], total: rows.length, substantive: substantive.length, truncated }, 400);
+show(substantive.slice(0, 25));
+// If truncated is true, tell the user the answer is partial (oldest votes omitted).
+```

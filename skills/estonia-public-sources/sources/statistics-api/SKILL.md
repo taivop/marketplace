@@ -29,6 +29,11 @@ Public PXWeb JSON API. No authentication. Use `https://andmed.stat.ee/api/v1/en/
 
 Working sample: `GET https://andmed.stat.ee/api/v1/en/stat/IA001`, then POST the payload above. The response is JSON-stat 2 with table ID `IA001`, year `2025`, and a numeric `value`.
 
+Known tables (verified 2026-07-24):
+
+- Wages: `PA001` is discontinued (data ends 2022Q4). Annual wage statistics live in `PA101` under `majandus/palk-ja-toojeukulu/palk/aastastatistika` (updated 2026-03).
+- Population totals: `RV021` under `rahvastik/rahvastikunaitajad-ja-koosseis/rahvaarv-ja-rahvastiku-koosseis/RV021.PX`.
+
 ## Return
 
 Preserve the table ID, source and update metadata, dimension codes and labels, selected values, units/decimals, observations, exact POST payload, and retrieval time.
@@ -38,6 +43,8 @@ Preserve the table ID, source and update metadata, dimension codes and labels, s
 - The API root itself returns 404; include the language and database path.
 - Table IDs are not enough to construct a query: always read the current variable contract first.
 - Confirm units, seasonal adjustment, reference period, and suppression markers before analysis.
+- Variable codes may contain non-ASCII characters (e.g. `Vanuserühm` in RV021); send them exactly as returned by the table contract.
+- Discontinued tables still return contracts and data; check the last period value before treating a table as current.
 
 ## Verify
 
