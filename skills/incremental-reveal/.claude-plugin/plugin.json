@@ -1,0 +1,8 @@
+{
+  "name": "incremental-reveal",
+  "version": "0.1.0",
+  "description": "Review writing by simulating a first-time reader who cannot see ahead \u2014 catches confusion, buried arguments, and drop-off points that whole-text review structurally cannot. USE WHEN the user asks to review, critique, proofread, or get feedback on a post, essay, email, carousel, or deck, or asks where readers will lose interest or get confused.",
+  "author": {
+    "name": "Taivo Marketplace"
+  }
+}
