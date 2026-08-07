@@ -38,7 +38,10 @@ fresh read, not a continuation of reading 2.
    frontmatter, editing notes, changelogs, the source URL.
 2. **Build prefixes.** `prefix-NN` contains paragraphs 1..NN concatenated.
 3. **Spawn N readers at once, in a single message** so they run concurrently.
-   Each gets exactly one prefix.
+   Each gets exactly one prefix. Cap it at 20 at a time — beyond that most
+   harnesses queue anyway, and the marginal reader tells you little. For a
+   piece longer than 20 paragraphs, either run the prefixes in batches or
+   split on sections rather than paragraphs.
 4. **Synthesise** from what the readers reported.
 
 ### The reader prompt
@@ -77,6 +80,9 @@ Read the N reaction files. Report:
 Every finding must come from what a reader actually reported. Use the full text
 only to locate and phrase a finding, never to add one — if no reader noticed it,
 it does not go in the report.
+
+Match the report's length to what the readers actually found. A section with
+nothing in it gets one line saying so; do not pad it to match the others.
 
 ## Rules that matter
 
