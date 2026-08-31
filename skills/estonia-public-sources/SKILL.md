@@ -14,7 +14,7 @@ metadata:
 ## Workflow
 
 1. Search `SOURCE_MAP.md` using the user's topic, institution, dataset, or Estonian term.
-2. Select the narrowest matching source and open its `sources/<name>/SKILL.md` recipe.
+2. Select the narrowest matching source and read its `sources/<name>/SKILL.md` recipe in full — these are short, and a partial read drops the traps section.
 3. Use the recipe's exact API, download, or browser workflow. Do not repeat general web discovery unless the catalog has no match.
 4. Verify that the response contains the documented records, not merely an HTTP success page.
 5. If the recipe is broken or the useful records require authentication, say so explicitly and do not claim that the source was queried.
