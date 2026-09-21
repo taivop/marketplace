@@ -5,7 +5,10 @@ This repository is a dual-distribution marketplace for reusable agent plugins:
 1. Anthropic Claude Code marketplace plugins.
 2. Codex installable skills.
 
-It is not limited to public-data skills. Any useful, reusable agent plugin can live here (for example, future additions such as `skill-self-coaching`).
+Packages include thinking and writing skills and Estonian search tools.
+The public overview is [taivo.ai/projects/skills/](https://www.taivo.ai/projects/skills/).
+When adding, removing, renaming, or materially changing a package, keep that
+overview's descriptions, examples, and links current. Skill files stay here.
 
 ## Core Layout
 
