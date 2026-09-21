@@ -1,5 +1,0 @@
-.env
-*.key
-output/
-spec.yaml
-__pycache__/
